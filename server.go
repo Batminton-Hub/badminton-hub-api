@@ -5,16 +5,17 @@ import (
 	mongodb "Badminton-Hub/internal/adapter/outbound/database/mongoDB"
 	"Badminton-Hub/internal/core/service"
 	core_util "Badminton-Hub/internal/util"
-	"os"
-
-	"github.com/joho/godotenv"
+	"Badminton-Hub/util"
 )
 
 func StartServer() {
-	godotenv.Load()
+	config, err := util.LoadConfig()
+	if err != nil {
+		panic("Failed to load configuration: " + err.Error())
+	}
 
 	// Initialize MongoDB
-	db := mongodb.NewMongoDB(os.Getenv("DB_Name"))
+	db := mongodb.NewMongoDB(config.DBName)
 
 	middleware := core_util.NewMiddlewareUtil()
 	memberUtil := core_util.NewMemberUtil(db)

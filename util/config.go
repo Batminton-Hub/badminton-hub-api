@@ -3,15 +3,25 @@ package util
 import (
 	"Badminton-Hub/internal/core/domain"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 func LoadConfig() (domain.InternalConfig, error) {
-	config := domain.InternalConfig{}
-	if dbName := os.Getenv("DB_Name"); dbName != "" {
-		config.DBName = dbName
-	} else {
-		config.DBName = "default_db_name" // Default value if not set
-	}
+	godotenv.Load()
+
+	var config domain.InternalConfig
+
+	config.DBName = getEnv("DB_Name", "default_db_name")
 
 	return config, nil
+}
+
+func getEnv(keyEnv, defaultVal string) string {
+	value := os.Getenv(keyEnv)
+	if value != "" {
+		return value
+	} else {
+		return defaultVal
+	}
 }

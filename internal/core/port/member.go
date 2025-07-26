@@ -1,11 +1,17 @@
 package port
 
-import "Badminton-Hub/internal/core/domain"
+import (
+	"Badminton-Hub/internal/core/domain"
+	"context"
+)
 
 type MemberUtil interface {
-	RegisterMember(registerForm domain.RegisterForm) error
+	RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember)
+	Login(loginForm domain.LoginForm) (int, domain.ResponseLogin)
 }
 
-type MemberAdapter interface {
-	RegisterMember(member domain.Member) error
+type MemberRepo interface {
+	RegisterMember(ctx context.Context, member domain.Member) error
+	LoginByEmail(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error)
+	// LoginByClerk(ctx context.Context, clerk string) (domain.Member, error)
 }
