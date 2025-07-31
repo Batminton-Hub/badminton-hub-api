@@ -9,12 +9,10 @@ import (
 
 type MemberController interface {
 	RegisterMember(c *gin.Context)
+	Login(c *gin.Context)
 }
 type MemberControllerImpl struct {
-	// Middleware port.MiddlewareUtil
 	MemberUtil port.MemberUtil
-	// port.MiddlewareUtil
-	// port.MemberUtil
 }
 
 func (m *MemberControllerImpl) RegisterMember(c *gin.Context) {
@@ -24,10 +22,19 @@ func (m *MemberControllerImpl) RegisterMember(c *gin.Context) {
 		return
 	}
 
-	if err := m.MemberUtil.RegisterMember(registerForm); err != nil {
-		c.JSON(500, gin.H{"error": "Failed to register member"})
+	httpStatus, response := m.MemberUtil.RegisterMember(registerForm)
+
+	c.JSON(httpStatus, response)
+}
+
+func (m *MemberControllerImpl) Login(c *gin.Context) {
+	loginForm := domain.LoginForm{}
+	if err := c.ShouldBind(&loginForm); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Member registered successfully"})
+	httpStatus, response := m.MemberUtil.Login(loginForm)
+
+	c.JSON(httpStatus, response)
 }

@@ -26,10 +26,18 @@ func NewGinMainRoute(
 func (m *MainRoute) RouteMember() {
 	r := gin.Default()
 	member := r.Group("/member")
-	member.Use(m.MiddlewareController.Authenticate)
 	{
 		member.POST("/register", m.MemberController.RegisterMember)
+		member.POST("/login", m.MemberController.Login)
+		// member.GET("/authenticate", m.MiddlewareController.Authenticate, TestFunc())
 	}
 
 	r.Run()
 }
+
+// func TestFunc() func(c *gin.Context) {
+// 	return func(c *gin.Context) {
+// 		fmt.Println("Test function called")
+// 		c.JSON(200, gin.H{"message": "Test function called"})
+// 	}
+// }
