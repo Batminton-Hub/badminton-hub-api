@@ -1,15 +1,16 @@
 package util
 
 import (
-	"Badminton-Hub/internal/core/domain"
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func GenerateHash(key string) string {
@@ -33,8 +34,9 @@ func HashPassword(password, key string) string {
 	return newPassword
 }
 
-func HashAuth(key string) string {
-	data := fmt.Sprint(key + "hash_auth")
+func HashAuth(rawHash string) string {
+	// rawHash := authBody.Data.UserID + fmt.Sprint(authBody.Data.CreatedAt) + key
+	data := fmt.Sprint(rawHash + "hash_auth")
 	hashBy := sha256.New()
 	hashBy.Write([]byte(data))
 	bytesDigest := hashBy.Sum(nil)
@@ -79,6 +81,7 @@ func AESEncrypt(plaintext string, key string) (string, error) {
 
 	return str, nil
 }
+
 func AESDecrypt(encrypted, key string) ([]byte, error) {
 	iv := "my16digitIvKey12"
 
@@ -106,53 +109,64 @@ func AESDecrypt(encrypted, key string) ([]byte, error) {
 	return ciphertext, nil
 }
 
-type AuthBody struct {
-	Exp  int64             `json:"exp"`
-	Data domain.AuthMember `json:"data"`
-	// Data interface{} `json:"data"`
+func EncrypteJwt(body any, key string, lt time.Duration) (string, error) {
+	claims := jwt.MapClaims{
+		"body": body,
+		"exp":  time.Now().Add(lt).Unix(),
+	}
+	tokenJWT := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	encryptData, err := tokenJWT.SignedString([]byte(key))
+	if err != nil {
+		return "", err
+	}
+	return encryptData, nil
 }
 
-func GenBearerToken(member domain.Member) (string, error) {
-	lt := time.Duration(5 * time.Minute)
-	exp := time.Now().Add(lt).Unix()
-	createAt := time.Now().UTC()
-	rawHash := member.Email + member.Username + fmt.Sprint(createAt) + "test"
-	authBody := AuthBody{
-		Exp: exp,
-		Data: domain.AuthMember{
-			Email:     member.Email,
-			Username:  member.Username,
-			CreatedAt: createAt,
-			HashAuth:  HashAuth(rawHash),
-		},
-	}
-
-	bytesAuth, err := json.Marshal(authBody)
+func DecrypteJwt(encryptData string, key string, body any) error {
+	var tokenJWT *jwt.Token
+	var err error
+	tokenJWT, err = jwt.Parse(encryptData, func(token *jwt.Token) (interface{}, error) {
+		return key, nil
+	})
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal member: %w", err)
+		return err
 	}
 
-	encryptedMember, err := AESEncrypt(string(bytesAuth), "your-encryption-key-here")
-	if err != nil {
-		return "", fmt.Errorf("failed to encrypt member: %w", err)
+	exp, err := tokenJWT.Claims.GetExpirationTime()
+	switch {
+	case err != nil:
+		return err
+	case time.Now().After(exp.Time):
+		return fmt.Errorf("token has expired")
 	}
 
-	token := encryptedMember
+	rawBody := tokenJWT.Claims.(jwt.MapClaims)["body"]
+	if byteBody, err := encryptGOB(rawBody); err == nil {
+		if err := decrypteGOB(byteBody, body); err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
 
-	return token, nil
+	return nil
 }
 
-func ValidateBearerToken(token string) (AuthBody, error) {
-	authBody := AuthBody{}
-	decrypted, err := AESDecrypt(token, "your-encryption-key-here")
-	if err != nil {
-		fmt.Println("Error decrypting token:", err)
-		return authBody, fmt.Errorf("failed to decrypt token: %w", err)
+func encryptGOB(body any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(body); err != nil {
+		return nil, err
 	}
+	return buf.Bytes(), nil
+}
 
-	if err = json.Unmarshal(decrypted, &authBody); err != nil {
-		return authBody, fmt.Errorf("failed to unmarshal decrypted token: %w", err)
+func decrypteGOB(data []byte, body any) error {
+	buf := bytes.NewBuffer(data)
+	dec := gob.NewDecoder(buf)
+	if err := dec.Decode(body); err != nil {
+		return err
 	}
-
-	return authBody, nil
+	return nil
 }
