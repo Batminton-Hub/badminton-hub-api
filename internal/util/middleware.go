@@ -4,7 +4,6 @@ import (
 	"Badminton-Hub/util"
 	"errors"
 	"fmt"
-	"time"
 )
 
 type MiddlewareUtil struct {
@@ -29,10 +28,10 @@ func (m *MiddlewareUtil) Authenticate(token string) error {
 		return errors.New("invalid token")
 	}
 
-	// ตรวจสอบว่า token ยังไม่หมดอายุ
-	if authBody.Exp < time.Now().Unix() {
-		return errors.New("token has expired")
-	}
+	// // ตรวจสอบว่า token ยังไม่หมดอายุ
+	// if authBody.Exp < time.Now().Unix() {
+	// 	return errors.New("token has expired")
+	// }
 
 	// ถ้า token ถูกต้องและยังไม่หมดอายุ ให้ดำเนินการต่อ
 	return nil
