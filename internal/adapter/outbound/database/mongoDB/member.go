@@ -27,7 +27,7 @@ func (db *MongoDB) RegisterMember(ctx context.Context, member domain.Member) err
 	return nil
 }
 
-func (db *MongoDB) LoginByEmail(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error) {
+func (db *MongoDB) FindEmailMember(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error) {
 	collection := db.Database.Collection("members")
 	member := domain.Member{}
 	filter := bson.M{

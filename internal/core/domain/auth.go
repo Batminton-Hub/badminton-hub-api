@@ -9,6 +9,12 @@ type AuthMember struct {
 	HashAuth  string    `json:"hash_auth"`
 }
 
+type HashAuth struct {
+	Username string
+	CreateAt time.Time
+	UserID   string
+}
+
 type AuthResponse struct {
 	Code int   `json:"error_code,omitempty"`
 	Err  error `json:"error,omitempty"`

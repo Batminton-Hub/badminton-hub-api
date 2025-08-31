@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -17,44 +18,26 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateHash(key string) string {
-	timeNow := time.Now().UnixMilli()
-	data := fmt.Sprint(key, timeNow)
+// One way Encryption
+func Sha256(data any) string {
 	hashBy := sha256.New()
-	hashBy.Write([]byte(data))
+	hashBy.Write([]byte(fmt.Sprint(data)))
 	bytesDigest := hashBy.Sum(nil)
 
 	hash := fmt.Sprintf("%x", bytesDigest)
 	return hash
 }
 
-func HashPassword(password, key string) string {
-	data := fmt.Sprint(password, key)
-	hashBy := sha256.New()
-	hashBy.Write([]byte(data))
+func MD5(data any) string {
+	hashBy := md5.New()
+	hashBy.Write([]byte(fmt.Sprint(data)))
 	bytesDigest := hashBy.Sum(nil)
 
-	newPassword := fmt.Sprintf("%x", bytesDigest)
-	return newPassword
+	hash := fmt.Sprintf("%x", bytesDigest)
+	return hash
 }
 
-func HashAuth(rawHash string) string {
-	data := fmt.Sprint(rawHash + "hash_auth")
-	hashBy := sha256.New()
-	hashBy.Write([]byte(data))
-	bytesDigest := hashBy.Sum(nil)
-
-	newPassword := fmt.Sprintf("%x", bytesDigest)
-	return newPassword
-}
-
-func pkcs5UnPadding(src []byte) []byte {
-	length := len(src)
-	unpadding := int(src[length-1])
-
-	return src[:(length - unpadding)]
-}
-
+// Two way Encryption
 func AESEncrypt(body any, key string, lt time.Duration) (string, error) {
 	bytePayload, err := EncryptGOB(body)
 	if err != nil {
@@ -137,14 +120,6 @@ func AESDecrypt(encryptData string, key string, body any) error {
 	return nil
 }
 
-func randomIV() []byte {
-	iv := make([]byte, aes.BlockSize)
-	if _, err := rand.Read(iv); err != nil {
-		log.Fatal(err)
-	}
-	return iv
-}
-
 func JWTEncrypt(body any, key string, lt time.Duration) (string, error) {
 	claims := jwt.MapClaims{
 		"body": body,
@@ -189,6 +164,7 @@ func JWTDecrypt(encryptData string, key string, body any) error {
 	return nil
 }
 
+// Byte Convert
 func EncryptGOB(body any) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
@@ -197,7 +173,6 @@ func EncryptGOB(body any) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-
 func DecrypteGOB(data []byte, body any) error {
 	buf := bytes.NewBuffer(data)
 	dec := gob.NewDecoder(buf)
@@ -205,4 +180,38 @@ func DecrypteGOB(data []byte, body any) error {
 		return err
 	}
 	return nil
+}
+
+// Hash
+func GenerateHash(key string) string {
+	timeNow := time.Now().UnixMilli()
+	data := fmt.Sprint(key, timeNow)
+	hash := Sha256(data)
+	return hash
+}
+func HashPassword(password, key string) string {
+	data := fmt.Sprint(password, key)
+	newPassword := Sha256(data)
+	return newPassword
+}
+func HashAuth(rawHash, key string) string {
+	data := fmt.Sprint(rawHash + key)
+	hashAuth := Sha256(data)
+	return hashAuth
+}
+
+// other function
+func randomIV() []byte {
+	iv := make([]byte, aes.BlockSize)
+	if _, err := rand.Read(iv); err != nil {
+		log.Fatal(err)
+	}
+	return iv
+}
+
+func pkcs5UnPadding(src []byte) []byte {
+	length := len(src)
+	unpadding := int(src[length-1])
+
+	return src[:(length - unpadding)]
 }

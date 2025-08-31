@@ -19,6 +19,13 @@ func NewMiddlewareUtil(encryption port.Encryption) *MiddlewareUtil {
 
 func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	response := domain.AuthResponse{}
+	config, err := util.LoadConfig()
+	if err != nil {
+		response.Code = domain.ErrLoadConfig.Code
+		response.Err = domain.ErrLoadConfig.Err
+		return 500, response
+	}
+
 	// Remove "Bearer " prefix
 	token = token[len("Bearer "):]
 
@@ -36,7 +43,7 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 		return 401, response
 	}
 	rawHash := string(byteAuth)
-	hashauth := util.HashAuth(rawHash)
+	hashauth := util.HashAuth(rawHash, config.KeyHashAuth)
 	if authBody.Data.HashAuth != hashauth {
 		response.Code = domain.ErrValidateHashAuth.Code
 		response.Err = domain.ErrValidateHashAuth.Err

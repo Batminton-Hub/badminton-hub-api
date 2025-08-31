@@ -12,5 +12,5 @@ type MemberUtil interface {
 
 type MemberRepo interface {
 	RegisterMember(ctx context.Context, member domain.Member) error
-	LoginByEmail(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error)
+	FindEmailMember(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error)
 }

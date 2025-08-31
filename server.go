@@ -24,6 +24,7 @@ func StartServer() {
 	middleware := service.NewMiddlewareUtil(encryptionJWT)
 	memberUtil := service.NewMemberUtil(db, middleware)
 
+	// Initialize HTTP server
 	externalRoute := gin.NewGinMainRoute(middleware, memberUtil)
 
 	externalRoute.Start()

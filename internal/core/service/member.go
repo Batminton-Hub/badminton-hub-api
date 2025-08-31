@@ -31,13 +31,17 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 		response.Message = domain.ErrLoadConfig.Msg
 		return 500, response
 	}
+
+	createAt := time.Now()
+	updateAt := time.Now()
 	memberBody := domain.Member{
+		UserID:    util.GenUserID(registerForm.Email, registerForm.Password),
 		Email:     registerForm.Email,
 		Password:  util.HashPassword(registerForm.Password, config.KeyHashPassword),
 		Gender:    registerForm.Gender,
-		Hash:      util.GenerateHash(registerForm.Email),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Hash:      util.GenerateHash(config.KeyHashMember),
+		CreatedAt: createAt,
+		UpdatedAt: updateAt,
 	}
 
 	if err := m.memberRepo.RegisterMember(ctx, memberBody); err != nil {
@@ -48,7 +52,12 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 	}
 
 	// create token
-	token, err := util.GenBearerToken(memberBody, m.middlewareUtil.Encryptetion())
+	hashAuth := domain.HashAuth{
+		Username: memberBody.Username,
+		CreateAt: memberBody.CreatedAt,
+		UserID:   memberBody.UserID,
+	}
+	token, err := util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
 	if err != nil {
 		response.ErrorCode = domain.ErrGenerateToken.Code
 		response.Error = domain.ErrGenerateToken.Err
@@ -62,30 +71,41 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 }
 
 func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogin) {
+	response := domain.ResponseLogin{}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	response := domain.ResponseLogin{}
-	memberBody, err := m.memberRepo.LoginByEmail(ctx, loginForm)
+	config, err := util.LoadConfig()
 	if err != nil {
-		response.ErrorCode = 1003
-		response.Error = "Failed to login member"
+		response.ErrorCode = domain.ErrLoadConfig.Code
+		response.Error = domain.ErrLoadConfig.Err
+		return 500, response
+	}
+
+	memberBody, err := m.memberRepo.FindEmailMember(ctx, loginForm)
+	if err != nil {
+		response.ErrorCode = domain.ErrMemberEmailNotFound.Code
+		response.Error = domain.ErrMemberEmailNotFound.Err
 		return 400, response
 	}
 
 	// Check password
-	if memberBody.Password != util.HashPassword(loginForm.Password, "test") {
-		response.ErrorCode = 1004
-		response.Error = "Invalid email or password"
+	if memberBody.Password != util.HashPassword(loginForm.Password, config.KeyHashPassword) {
+		response.ErrorCode = domain.ErrLoginHashPassword.Code
+		response.Error = domain.ErrLoginHashPassword.Err
 		return 401, response
 	}
 
 	// create token
-	var token string
-	token, err = util.GenBearerToken(memberBody, m.middlewareUtil.Encryptetion())
+	hashAuth := domain.HashAuth{
+		Username: memberBody.Username,
+		CreateAt: memberBody.CreatedAt,
+		UserID:   memberBody.UserID,
+	}
+	token, err := util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
 	if err != nil {
-		response.ErrorCode = 1005
-		response.Error = "Failed to generate token"
+		response.ErrorCode = domain.ErrGenerateToken.Code
+		response.Error = domain.ErrGenerateToken.Err
 		return 500, response
 	}
 

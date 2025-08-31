@@ -6,6 +6,7 @@ import (
 
 // Member Structure
 type Member struct {
+	UserID       string    `json:"user_id"`       // Unique user ID
 	Username     string    `json:"username"`      // Unique username
 	DisplayName  string    `json:"display_name"`  // Display name
 	Password     string    `json:"password"`      // Password hash
@@ -22,6 +23,11 @@ type Member struct {
 	DateOfBirth  string    `json:"date_of_birth"` // Date of birth in YYYY-MM-DD format
 	Region       string    `json:"region"`        // Region or country
 	// Address     Address   `json:"address"`      // Address details
+}
+
+type HashMember struct {
+	Email    string
+	Username string
 }
 
 type Address struct {
@@ -57,6 +63,6 @@ type LoginForm struct {
 type ResponseLogin struct {
 	BearerToken string `json:"bearer_token,omitempty"`
 	ErrorCode   int    `json:"error_code,omitempty"`
-	Error       string `json:"error,omitempty"`
+	Error       error  `json:"error,omitempty"`
 	Message     string `json:"message,omitempty"`
 }

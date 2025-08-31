@@ -25,6 +25,7 @@ var (
 	ErrMemberRegisterFailDuplicateHash  = errorNew(1004, "Register member failed: duplicate hash")
 	ErrMemberEmailNotFound              = errorNew(1005, "Email not found")
 	ErrCreateMemberFail                 = errorNew(1002, "Failed to create member")
+	ErrLoginHashPassword                = errorNew(1006, "Failed to hash password")
 
 	// Token
 	ErrGenerateToken    = errorNew(1006, "Failed to generate token")

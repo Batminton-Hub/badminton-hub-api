@@ -15,25 +15,35 @@ type AuthBody struct {
 	Permission map[string]int    `json:"permission"`
 }
 
-func GenBearerToken(member domain.Member, encryption port.Encryption) (string, error) {
+func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (string, error) {
+	var token string
+	config, err := LoadConfig()
+	if err != nil {
+		return token, fmt.Errorf("failed to load config: %w", err)
+	}
+
 	lt := time.Duration(5 * time.Minute)
 	exp := time.Now().Add(lt).Unix()
 	createAt := time.Now().UTC()
-	rawHash := member.Email + member.Username + fmt.Sprint(createAt) + "test"
+	byteHash, err := EncryptGOB(hashBody)
+	if err != nil {
+		return token, fmt.Errorf("failed to encrypt hash body: %w", err)
+	}
+	rawHash := string(byteHash)
 	authBody := AuthBody{
 		Exp: exp,
 		Data: domain.AuthMember{
 			CreatedAt: createAt,
-			HashAuth:  HashAuth(rawHash),
+			HashAuth:  HashAuth(rawHash, config.KeyHashAuth),
 		},
 	}
 
 	encryptedMember, err := encryption.Encrypte(authBody, "your-encryption-key-here", lt)
 	if err != nil {
-		return "", fmt.Errorf("failed to encrypt member: %w", err)
+		return token, fmt.Errorf("failed to encrypt member: %w", err)
 	}
 
-	token := encryptedMember
+	token = encryptedMember
 
 	return token, nil
 }
