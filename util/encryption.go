@@ -55,7 +55,7 @@ func pkcs5UnPadding(src []byte) []byte {
 	return src[:(length - unpadding)]
 }
 
-func aesEncrypt(body any, key string, lt time.Duration) (string, error) {
+func AESEncrypt(body any, key string, lt time.Duration) (string, error) {
 	bytePayload, err := EncryptGOB(body)
 	if err != nil {
 		return "", errors.New("failed to encrypt payload")
@@ -101,7 +101,7 @@ func aesEncrypt(body any, key string, lt time.Duration) (string, error) {
 	return str, nil
 }
 
-func aesDecrypt(encryptData string, key string, body any) error {
+func AESDecrypt(encryptData string, key string, body any) error {
 	ciphertext, err := base64.StdEncoding.DecodeString(encryptData)
 	if err != nil {
 		fmt.Println("Error decoding base64:", err)
@@ -145,7 +145,7 @@ func randomIV() []byte {
 	return iv
 }
 
-func jwtEncrypt(body any, key string, lt time.Duration) (string, error) {
+func JWTEncrypt(body any, key string, lt time.Duration) (string, error) {
 	claims := jwt.MapClaims{
 		"body": body,
 		"exp":  time.Now().Add(lt).Unix(),
@@ -159,7 +159,7 @@ func jwtEncrypt(body any, key string, lt time.Duration) (string, error) {
 	return encryptData, nil
 }
 
-func jwtDecrypt(encryptData string, key string, body any) error {
+func JWTDecrypt(encryptData string, key string, body any) error {
 	var tokenJWT *jwt.Token
 	var err error
 	tokenJWT, err = jwt.Parse(encryptData, func(token *jwt.Token) (interface{}, error) {
@@ -205,29 +205,4 @@ func DecrypteGOB(data []byte, body any) error {
 		return err
 	}
 	return nil
-}
-
-type Encryptetion interface {
-	Encrypte(body any, key string, lt time.Duration) (string, error)
-	Decrypte(encryptData string, key string, body any) error
-}
-
-type JWTEncryption struct{}
-type AESEncryption struct{}
-
-func NewJWTEncryption() JWTEncryption { return JWTEncryption{} }
-func NewAESEncryption() AESEncryption { return AESEncryption{} }
-
-func (jwt *JWTEncryption) Encrypte(body any, key string, lt time.Duration) (string, error) {
-	return jwtEncrypt(body, key, lt)
-}
-func (jwt *JWTEncryption) Decrypte(encryptData string, key string, body any) error {
-	return jwtDecrypt(encryptData, key, body)
-}
-
-func (aes *AESEncryption) Encrypte(body any, key string, lt time.Duration) (string, error) {
-	return aesEncrypt(body, key, lt)
-}
-func (aes *AESEncryption) Decrypte(encryptData string, key string, body any) error {
-	return aesDecrypt(encryptData, key, body)
 }

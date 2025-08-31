@@ -16,8 +16,9 @@ func StartServer() {
 	// Initialize MongoDB
 	db := mongodb.NewMongoDB(config.DBName)
 
-	middleware := service.NewMiddlewareUtil()
-	memberUtil := service.NewMemberUtil(db)
+	encryptionJWT := service.NewJWTEncryption()
+	middleware := service.NewMiddlewareUtil(encryptionJWT)
+	memberUtil := service.NewMemberUtil(db, middleware)
 
 	externalRoute := gin.NewGinMainRoute(middleware, memberUtil)
 

@@ -2,14 +2,19 @@ package service
 
 import (
 	"Badminton-Hub/internal/core/domain"
+	"Badminton-Hub/internal/core/port"
 	"Badminton-Hub/util"
 	"time"
 )
 
-type MiddlewareUtil struct{}
+type MiddlewareUtil struct {
+	Encryption port.Encryption
+}
 
-func NewMiddlewareUtil() *MiddlewareUtil {
-	return &MiddlewareUtil{}
+func NewMiddlewareUtil(encryption port.Encryption) *MiddlewareUtil {
+	return &MiddlewareUtil{
+		Encryption: encryption,
+	}
 }
 
 func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
@@ -18,7 +23,7 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	token = token[len("Bearer "):]
 
 	// ถอด authentication token ที่ส่งมาจาก client
-	authBody, err := util.ValidateBearerToken(token)
+	authBody, err := util.ValidateBearerToken(m.Encryption, token)
 	if err != nil {
 		response.Code = domain.ErrValidateToken.Code
 		response.Err = domain.ErrValidateToken.Err
@@ -46,4 +51,8 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	}
 
 	return 200, response
+}
+
+func (m *MiddlewareUtil) Encryptetion() port.Encryption {
+	return m.Encryption
 }

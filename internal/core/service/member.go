@@ -9,12 +9,14 @@ import (
 )
 
 type MemberUtil struct {
-	memberRepo port.MemberRepo
+	memberRepo     port.MemberRepo
+	middlewareUtil port.MiddlewareUtil
 }
 
-func NewMemberUtil(memberRepo port.MemberRepo) *MemberUtil {
+func NewMemberUtil(memberRepo port.MemberRepo, middlewareUtil port.MiddlewareUtil) *MemberUtil {
 	return &MemberUtil{
-		memberRepo: memberRepo,
+		memberRepo:     memberRepo,
+		middlewareUtil: middlewareUtil,
 	}
 }
 func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember) {
@@ -46,7 +48,7 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 	}
 
 	// create token
-	token, err := util.GenBearerToken(memberBody)
+	token, err := util.GenBearerToken(memberBody, m.middlewareUtil.Encryptetion())
 	if err != nil {
 		response.ErrorCode = domain.ErrGenerateToken.Code
 		response.Error = domain.ErrGenerateToken.Err
@@ -80,7 +82,7 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 
 	// create token
 	var token string
-	token, err = util.GenBearerToken(memberBody)
+	token, err = util.GenBearerToken(memberBody, m.middlewareUtil.Encryptetion())
 	if err != nil {
 		response.ErrorCode = 1005
 		response.Error = "Failed to generate token"

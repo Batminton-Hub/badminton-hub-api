@@ -2,11 +2,12 @@ package util
 
 import (
 	"Badminton-Hub/internal/core/domain"
+	"Badminton-Hub/internal/core/port"
 	"fmt"
 	"time"
 )
 
-var encryption = NewJWTEncryption()
+// var encryption = NewJWTEncryption()
 
 type AuthBody struct {
 	Exp        int64             `json:"exp"`
@@ -14,7 +15,7 @@ type AuthBody struct {
 	Permission map[string]int    `json:"permission"`
 }
 
-func GenBearerToken(member domain.Member) (string, error) {
+func GenBearerToken(member domain.Member, encryption port.Encryption) (string, error) {
 	lt := time.Duration(5 * time.Minute)
 	exp := time.Now().Add(lt).Unix()
 	createAt := time.Now().UTC()
@@ -37,7 +38,7 @@ func GenBearerToken(member domain.Member) (string, error) {
 	return token, nil
 }
 
-func ValidateBearerToken(token string) (AuthBody, error) {
+func ValidateBearerToken(encryption port.Encryption, token string) (AuthBody, error) {
 	authBody := AuthBody{}
 
 	err := encryption.Decrypte(token, "your-encryption-key-here", &authBody)
