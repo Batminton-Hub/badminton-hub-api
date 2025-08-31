@@ -15,9 +15,9 @@ type MiddlewareControllerImpl struct {
 
 func (m *MiddlewareControllerImpl) Authenticate(c *gin.Context) {
 	token := c.GetHeader("Authorization")
-	token = token[len("Bearer "):] // Remove "Bearer " prefix
-	if err := m.MiddlewareUtil.Authenticate(token); err != nil {
-		c.AbortWithStatusJSON(401, gin.H{"error": err.Error()})
+	code, resp := m.MiddlewareUtil.Authenticate(token)
+	if code != 200 {
+		c.AbortWithStatusJSON(code, resp)
 		return
 	}
 

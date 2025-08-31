@@ -4,7 +4,6 @@ import (
 	"Badminton-Hub/internal/adapter/inbound/handler/http/gin"
 	mongodb "Badminton-Hub/internal/adapter/outbound/database/mongoDB"
 	"Badminton-Hub/internal/core/service"
-	core_util "Badminton-Hub/internal/util"
 	"Badminton-Hub/util"
 )
 
@@ -17,8 +16,8 @@ func StartServer() {
 	// Initialize MongoDB
 	db := mongodb.NewMongoDB(config.DBName)
 
-	middleware := core_util.NewMiddlewareUtil()
-	memberUtil := core_util.NewMemberUtil(db)
+	middleware := service.NewMiddlewareUtil()
+	memberUtil := service.NewMemberUtil(db)
 
 	externalRoute := gin.NewGinMainRoute(middleware, memberUtil)
 

@@ -10,9 +10,11 @@ import (
 func LoadConfig() (domain.InternalConfig, error) {
 	godotenv.Load()
 
-	var config domain.InternalConfig
-
-	config.DBName = getEnv("DB_Name", "default_db_name")
+	config := domain.InternalConfig{
+		DBName:          getEnv("DB_Name", "default_db_name"),
+		MongoDBURL:      getEnv("MongoDB_URL", "mongodb://localhost:27017"),
+		KeyHashPassword: getEnv("Key_Hash_Password", "default_hash_key"),
+	}
 
 	return config, nil
 }

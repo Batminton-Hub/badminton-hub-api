@@ -43,7 +43,7 @@ type RegisterForm struct {
 type ResponseRegisterMember struct {
 	BearerToken string `json:"bearer_token,omitempty"`
 	ErrorCode   int    `json:"error_code,omitempty"`
-	Error       string `json:"error,omitempty"`
+	Error       error  `json:"error,omitempty"`
 	Message     string `json:"message,omitempty"`
 }
 

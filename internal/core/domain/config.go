@@ -1,6 +1,7 @@
 package domain
 
 type InternalConfig struct {
-	DBName     string
-	MongoDBURL string
+	DBName          string
+	MongoDBURL      string
+	KeyHashPassword string
 }

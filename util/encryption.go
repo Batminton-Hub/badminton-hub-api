@@ -1,13 +1,17 @@
 package util
 
 import (
+	"Badminton-Hub/internal/core/domain"
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/gob"
+	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -35,7 +39,6 @@ func HashPassword(password, key string) string {
 }
 
 func HashAuth(rawHash string) string {
-	// rawHash := authBody.Data.UserID + fmt.Sprint(authBody.Data.CreatedAt) + key
 	data := fmt.Sprint(rawHash + "hash_auth")
 	hashBy := sha256.New()
 	hashBy.Write([]byte(data))
@@ -45,17 +48,31 @@ func HashAuth(rawHash string) string {
 	return newPassword
 }
 
-func PKCS5UnPadding(src []byte) []byte {
+func pkcs5UnPadding(src []byte) []byte {
 	length := len(src)
 	unpadding := int(src[length-1])
 
 	return src[:(length - unpadding)]
 }
 
-func AESEncrypt(plaintext string, key string) (string, error) {
-	iv := "my16digitIvKey12"
+func aesEncrypt(body any, key string, lt time.Duration) (string, error) {
+	bytePayload, err := EncryptGOB(body)
+	if err != nil {
+		return "", errors.New("failed to encrypt payload")
+	}
+
+	encryptBody := domain.EncrypBody{
+		ByteBody: bytePayload,
+		Exp:      time.Now().Add(lt),
+	}
+
+	payload, err := EncryptGOB(encryptBody)
+	if err != nil {
+		return "", errors.New("failed to encrypt payload")
+	}
 
 	var plainTextBlock []byte
+	plaintext := string(payload)
 	length := len(plaintext)
 
 	if length%16 != 0 {
@@ -70,46 +87,65 @@ func AESEncrypt(plaintext string, key string) (string, error) {
 	block, err := aes.NewCipher([]byte(key))
 
 	if err != nil {
-		return "", err
+		return "", errors.New("failed to create AES cipher")
 	}
 
+	iv := randomIV()
 	ciphertext := make([]byte, len(plainTextBlock))
-	mode := cipher.NewCBCEncrypter(block, []byte(iv))
+	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(ciphertext, plainTextBlock)
 
+	ciphertext = append(iv, ciphertext...)
 	str := base64.StdEncoding.EncodeToString(ciphertext)
 
 	return str, nil
 }
 
-func AESDecrypt(encrypted, key string) ([]byte, error) {
-	iv := "my16digitIvKey12"
-
-	ciphertext, err := base64.StdEncoding.DecodeString(encrypted)
-
+func aesDecrypt(encryptData string, key string, body any) error {
+	ciphertext, err := base64.StdEncoding.DecodeString(encryptData)
 	if err != nil {
 		fmt.Println("Error decoding base64:", err)
-		return nil, err
+		return err
 	}
+
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
 
 	block, err := aes.NewCipher([]byte(key))
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(ciphertext)%aes.BlockSize != 0 {
-		return nil, fmt.Errorf("block size cant be zero")
+		return fmt.Errorf("block size cant be zero")
 	}
 
 	mode := cipher.NewCBCDecrypter(block, []byte(iv))
 	mode.CryptBlocks(ciphertext, ciphertext)
-	ciphertext = PKCS5UnPadding(ciphertext)
+	ciphertext = pkcs5UnPadding(ciphertext)
 
-	return ciphertext, nil
+	payload := domain.EncrypBody{}
+	if err := DecrypteGOB(ciphertext, &payload); err != nil {
+		return err
+	}
+
+	if err := DecrypteGOB(payload.ByteBody, body); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func EncrypteJwt(body any, key string, lt time.Duration) (string, error) {
+func randomIV() []byte {
+	iv := make([]byte, aes.BlockSize)
+	if _, err := rand.Read(iv); err != nil {
+		log.Fatal(err)
+	}
+	return iv
+}
+
+func jwtEncrypt(body any, key string, lt time.Duration) (string, error) {
 	claims := jwt.MapClaims{
 		"body": body,
 		"exp":  time.Now().Add(lt).Unix(),
@@ -123,7 +159,7 @@ func EncrypteJwt(body any, key string, lt time.Duration) (string, error) {
 	return encryptData, nil
 }
 
-func DecrypteJwt(encryptData string, key string, body any) error {
+func jwtDecrypt(encryptData string, key string, body any) error {
 	var tokenJWT *jwt.Token
 	var err error
 	tokenJWT, err = jwt.Parse(encryptData, func(token *jwt.Token) (interface{}, error) {
@@ -142,8 +178,8 @@ func DecrypteJwt(encryptData string, key string, body any) error {
 	}
 
 	rawBody := tokenJWT.Claims.(jwt.MapClaims)["body"]
-	if byteBody, err := encryptGOB(rawBody); err == nil {
-		if err := decrypteGOB(byteBody, body); err != nil {
+	if byteBody, err := EncryptGOB(rawBody); err == nil {
+		if err := DecrypteGOB(byteBody, body); err != nil {
 			return err
 		}
 	} else {
@@ -153,7 +189,7 @@ func DecrypteJwt(encryptData string, key string, body any) error {
 	return nil
 }
 
-func encryptGOB(body any) ([]byte, error) {
+func EncryptGOB(body any) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(body); err != nil {
@@ -162,11 +198,36 @@ func encryptGOB(body any) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func decrypteGOB(data []byte, body any) error {
+func DecrypteGOB(data []byte, body any) error {
 	buf := bytes.NewBuffer(data)
 	dec := gob.NewDecoder(buf)
 	if err := dec.Decode(body); err != nil {
 		return err
 	}
 	return nil
+}
+
+type Encryptetion interface {
+	Encrypte(body any, key string, lt time.Duration) (string, error)
+	Decrypte(encryptData string, key string, body any) error
+}
+
+type JWTEncryption struct{}
+type AESEncryption struct{}
+
+func NewJWTEncryption() JWTEncryption { return JWTEncryption{} }
+func NewAESEncryption() AESEncryption { return AESEncryption{} }
+
+func (jwt *JWTEncryption) Encrypte(body any, key string, lt time.Duration) (string, error) {
+	return jwtEncrypt(body, key, lt)
+}
+func (jwt *JWTEncryption) Decrypte(encryptData string, key string, body any) error {
+	return jwtDecrypt(encryptData, key, body)
+}
+
+func (aes *AESEncryption) Encrypte(body any, key string, lt time.Duration) (string, error) {
+	return aesEncrypt(body, key, lt)
+}
+func (aes *AESEncryption) Decrypte(encryptData string, key string, body any) error {
+	return aesDecrypt(encryptData, key, body)
 }
