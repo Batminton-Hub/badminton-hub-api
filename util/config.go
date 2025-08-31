@@ -12,6 +12,7 @@ func LoadConfig() (domain.InternalConfig, error) {
 
 	config := domain.InternalConfig{
 		DBName:          getEnv("DB_Name", "default_db_name"),
+		ServerPort:      getEnv("Server_Port", "8080"),
 		MongoDBURL:      getEnv("MongoDB_URL", "mongodb://localhost:27017"),
 		KeyHashPassword: getEnv("Key_Hash_Password", "default_hash_key"),
 	}

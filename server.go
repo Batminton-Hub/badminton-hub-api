@@ -8,6 +8,9 @@ import (
 )
 
 func StartServer() {
+	defer util.ShutdownServer()
+
+	// Load configuration
 	config, err := util.LoadConfig()
 	if err != nil {
 		panic("Failed to load configuration: " + err.Error())
@@ -16,13 +19,16 @@ func StartServer() {
 	// Initialize MongoDB
 	db := mongodb.NewMongoDB(config.DBName)
 
+	// Initialize services
 	encryptionJWT := service.NewJWTEncryption()
 	middleware := service.NewMiddlewareUtil(encryptionJWT)
 	memberUtil := service.NewMemberUtil(db, middleware)
 
 	externalRoute := gin.NewGinMainRoute(middleware, memberUtil)
 
-	mainRoute := service.NewMainRoute(externalRoute)
+	externalRoute.Start()
+	defer externalRoute.Run()
 
-	mainRoute.RouteMember()
+	externalRoute.RouteMember()
+	externalRoute.RouteTest()
 }
