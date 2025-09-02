@@ -30,6 +30,10 @@ func (m *MainRoute) RouteMember() {
 	{
 		member.POST("/register", m.MemberController.RegisterMember)
 		member.POST("/login", m.MemberController.Login)
+		member.GET("/google/login", m.MemberController.GoogleLogin)
+		member.GET("/auth/google/login/callback", m.MemberController.GoogleLoginCallback, m.MemberController.Login)
+		member.GET("/google/register", m.MemberController.GoogleRegister)
+		member.GET("/auth/google/register/callback", m.MemberController.GoogleRegisterCallback)
 		// member.GET("/authenticate", m.MiddlewareController.Authenticate, TestFunc())
 	}
 }

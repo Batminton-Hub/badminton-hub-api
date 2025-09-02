@@ -83,7 +83,6 @@ func AESEncrypt(body any, key string, lt time.Duration) (string, error) {
 
 	return str, nil
 }
-
 func AESDecrypt(encryptData string, key string, body any) error {
 	ciphertext, err := base64.StdEncoding.DecodeString(encryptData)
 	if err != nil {
@@ -133,7 +132,6 @@ func JWTEncrypt(body any, key string, lt time.Duration) (string, error) {
 	}
 	return encryptData, nil
 }
-
 func JWTDecrypt(encryptData string, key string, body any) error {
 	var tokenJWT *jwt.Token
 	var err error

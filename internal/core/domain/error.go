@@ -27,6 +27,12 @@ var (
 	ErrCreateMemberFail                 = errorNew(1002, "Failed to create member")
 	ErrLoginHashPassword                = errorNew(1006, "Failed to hash password")
 
+	// OAuth
+	ErrInvalidOAuthState    = errorNew(1009, "Invalid OAuth state")
+	ErrInvalidOAuthExchange = errorNew(1010, "Invalid OAuth exchange")
+	ErrInvalidOAuthClient   = errorNew(1011, "Invalid OAuth client")
+	ErrInvalidOAuthDecode   = errorNew(1012, "Invalid OAuth decode")
+
 	// Token
 	ErrGenerateToken    = errorNew(1006, "Failed to generate token")
 	ErrValidateToken    = errorNew(1007, "Failed to validate token")

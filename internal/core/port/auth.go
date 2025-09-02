@@ -8,6 +8,6 @@ type MiddlewareUtil interface {
 	Encryptetion() Encryption
 }
 
-type Authentication interface {
-	Authenticate(token string) (int, domain.AuthResponse)
-}
+// type Authentication interface {
+// 	Authenticate(token string) (int, domain.AuthResponse)
+// }

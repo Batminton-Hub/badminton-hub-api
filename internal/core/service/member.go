@@ -5,18 +5,24 @@ import (
 	"Badminton-Hub/internal/core/port"
 	"Badminton-Hub/util"
 	"context"
+	"encoding/json"
+	"net/http"
 	"time"
+
+	"golang.org/x/oauth2"
 )
 
 type MemberUtil struct {
 	memberRepo     port.MemberRepo
 	middlewareUtil port.MiddlewareUtil
+	cache          port.Cache
 }
 
-func NewMemberUtil(memberRepo port.MemberRepo, middlewareUtil port.MiddlewareUtil) *MemberUtil {
+func NewMemberUtil(memberRepo port.MemberRepo, middlewareUtil port.MiddlewareUtil, cache port.Cache) *MemberUtil {
 	return &MemberUtil{
 		memberRepo:     memberRepo,
 		middlewareUtil: middlewareUtil,
+		cache:          cache,
 	}
 }
 func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember) {
@@ -112,4 +118,87 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 	response.BearerToken = token
 	response.Message = "Success"
 	return 200, response
+}
+
+func (m *MemberUtil) GoogleLogin() (int, domain.ResponseGoogleLogin) {
+	response := domain.ResponseGoogleLogin{}
+	googleConfig, err := util.GoogleConfig("LOGIN")
+	if err != nil {
+		response.ErrorCode = domain.ErrLoadConfig.Code
+		response.Error = domain.ErrLoadConfig.Err
+		response.Message = domain.ErrLoadConfig.Msg
+		return http.StatusInternalServerError, response
+	}
+
+	googleConfig.State = util.RandomGoogleState()
+
+	response.URL = googleConfig.Config.AuthCodeURL(
+		googleConfig.State,
+		oauth2.AccessTypeOffline,
+	)
+	return http.StatusTemporaryRedirect, response
+}
+
+func (m *MemberUtil) GoogleLoginCallback(state, code string) (int, domain.ResponseGoogleLoginCallback) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	response := domain.ResponseGoogleLoginCallback{}
+	googleConfig, err := util.GoogleConfig("LOGIN")
+	if err != nil {
+		response.ErrorCode = domain.ErrLoadConfig.Code
+		response.Error = domain.ErrLoadConfig.Err
+		response.Message = domain.ErrLoadConfig.Msg
+		return http.StatusInternalServerError, response
+	}
+
+	googleOAuthConfig := googleConfig.Config
+	oauthStateString := googleConfig.State
+
+	if state != oauthStateString {
+		response.ErrorCode = domain.ErrInvalidOAuthState.Code
+		response.Error = domain.ErrInvalidOAuthState.Err
+		response.Message = domain.ErrInvalidOAuthState.Msg
+		return http.StatusUnauthorized, response
+	}
+
+	token, err := googleOAuthConfig.Exchange(ctx, code)
+	if err != nil {
+		response.ErrorCode = domain.ErrInvalidOAuthExchange.Code
+		response.Error = domain.ErrInvalidOAuthExchange.Err
+		response.Message = domain.ErrInvalidOAuthExchange.Msg
+		return http.StatusUnauthorized, response
+	}
+
+	// ใช้ token เรียก API ของ Google เพื่อดึงข้อมูลผู้ใช้
+	client := googleOAuthConfig.Client(ctx, token)
+	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	if err != nil {
+		response.ErrorCode = domain.ErrInvalidOAuthClient.Code
+		response.Error = domain.ErrInvalidOAuthClient.Err
+		response.Message = domain.ErrInvalidOAuthClient.Msg
+		return http.StatusUnauthorized, response
+	}
+	defer resp.Body.Close()
+
+	var userInfo map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		response.ErrorCode = domain.ErrInvalidOAuthDecode.Code
+		response.Error = domain.ErrInvalidOAuthDecode.Err
+		response.Message = domain.ErrInvalidOAuthDecode.Msg
+		return http.StatusUnauthorized, response
+	}
+
+	response.UserInfo = userInfo
+	response.AccessToken = token.AccessToken
+	response.RefreshToken = token.RefreshToken
+	return http.StatusOK, response
+}
+
+func (m *MemberUtil) GoogleRegister() (int, domain.ResponseGoogleRegister) {
+	return 200, domain.ResponseGoogleRegister{}
+}
+
+func (m *MemberUtil) GoogleRegisterCallback(state, code string) (int, domain.ResponseGoogleRegisterCallback) {
+	return 200, domain.ResponseGoogleRegisterCallback{}
 }

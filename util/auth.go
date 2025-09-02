@@ -4,10 +4,9 @@ import (
 	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/internal/core/port"
 	"fmt"
+	"math/rand"
 	"time"
 )
-
-// var encryption = NewJWTEncryption()
 
 type AuthBody struct {
 	Exp        int64             `json:"exp"`
@@ -61,4 +60,13 @@ func ValidateBearerToken(encryption port.Encryption, token string) (AuthBody, er
 	}
 
 	return authBody, nil
+}
+
+func RandomGoogleState() string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	state := make([]byte, 32)
+	for i := range state {
+		state[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(state)
 }

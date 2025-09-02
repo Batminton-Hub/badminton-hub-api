@@ -66,3 +66,23 @@ type ResponseLogin struct {
 	Error       error  `json:"error,omitempty"`
 	Message     string `json:"message,omitempty"`
 }
+
+type ResponseGoogleLogin struct {
+	URL       string `json:"url,omitempty"`
+	ErrorCode int    `json:"error_code,omitempty"`
+	Error     error  `json:"error,omitempty"`
+	Message   string `json:"message,omitempty"`
+}
+
+type ResponseGoogleLoginCallback struct {
+	UserInfo     map[string]interface{} `json:"user_info,omitempty"`
+	AccessToken  string                 `json:"token,omitempty"`
+	RefreshToken string                 `json:"refresh_token,omitempty"`
+	ErrorCode    int                    `json:"error_code,omitempty"`
+	Error        error                  `json:"error,omitempty"`
+	Message      string                 `json:"message,omitempty"`
+}
+
+type ResponseGoogleRegister struct{}
+
+type ResponseGoogleRegisterCallback struct{}
