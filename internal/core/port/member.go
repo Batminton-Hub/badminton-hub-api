@@ -9,7 +9,6 @@ type MemberUtil interface {
 	RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember)
 	Login(loginForm domain.LoginForm) (int, domain.ResponseLogin)
 	GoogleLogin() (int, domain.ResponseGoogleLogin)
-	GoogleLoginCallback(state, code string) (int, domain.ResponseGoogleLoginCallback)
 	GoogleRegister() (int, domain.ResponseGoogleRegister)
 	GoogleRegisterCallback(state, code string) (int, domain.ResponseGoogleRegisterCallback)
 }

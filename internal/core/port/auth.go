@@ -4,8 +4,9 @@ import "Badminton-Hub/internal/core/domain"
 
 type MiddlewareUtil interface {
 	// Authentication
-	Authenticate(token string) (int, domain.AuthResponse)
 	Encryptetion() Encryption
+	Authenticate(token string) (int, domain.AuthResponse)
+	GoogleLoginCallback(state, code string) (int, domain.ResponseGoogleLoginCallback)
 }
 
 // type Authentication interface {

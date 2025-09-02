@@ -75,14 +75,23 @@ type ResponseGoogleLogin struct {
 }
 
 type ResponseGoogleLoginCallback struct {
-	UserInfo     map[string]interface{} `json:"user_info,omitempty"`
-	AccessToken  string                 `json:"token,omitempty"`
-	RefreshToken string                 `json:"refresh_token,omitempty"`
-	ErrorCode    int                    `json:"error_code,omitempty"`
-	Error        error                  `json:"error,omitempty"`
-	Message      string                 `json:"message,omitempty"`
+	UserInfo     GoogleUserInfo `json:"user_info,omitempty"`
+	AccessToken  string         `json:"access_token,omitempty"`
+	RefreshToken string         `json:"refresh_token,omitempty"`
+	ErrorCode    int            `json:"error_code,omitempty"`
+	Error        error          `json:"error,omitempty"`
+	Message      string         `json:"message,omitempty"`
 }
 
 type ResponseGoogleRegister struct{}
 
 type ResponseGoogleRegisterCallback struct{}
+
+type GoogleUserInfo struct {
+	Email         string `json:"email"`
+	GivenName     string `json:"given_name"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+	VerifiedEmail bool   `json:"verified_email"`
+}

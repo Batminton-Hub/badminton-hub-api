@@ -73,7 +73,10 @@ func AESEncrypt(body any, key string, lt time.Duration) (string, error) {
 		return "", errors.New("failed to create AES cipher")
 	}
 
-	iv := randomIV()
+	iv, err := randomIV()
+	if err != nil {
+		return "", err
+	}
 	ciphertext := make([]byte, len(plainTextBlock))
 	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(ciphertext, plainTextBlock)
@@ -108,11 +111,11 @@ func AESDecrypt(encryptData string, key string, body any) error {
 	ciphertext = pkcs5UnPadding(ciphertext)
 
 	payload := domain.EncrypBody{}
-	if err := DecrypteGOB(ciphertext, &payload); err != nil {
+	if err := DecryptGOB(ciphertext, &payload); err != nil {
 		return err
 	}
 
-	if err := DecrypteGOB(payload.ByteBody, body); err != nil {
+	if err := DecryptGOB(payload.ByteBody, body); err != nil {
 		return err
 	}
 
@@ -152,7 +155,7 @@ func JWTDecrypt(encryptData string, key string, body any) error {
 
 	rawBody := tokenJWT.Claims.(jwt.MapClaims)["body"]
 	if byteBody, err := EncryptGOB(rawBody); err == nil {
-		if err := DecrypteGOB(byteBody, body); err != nil {
+		if err := DecryptGOB(byteBody, body); err != nil {
 			return err
 		}
 	} else {
@@ -171,7 +174,7 @@ func EncryptGOB(body any) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-func DecrypteGOB(data []byte, body any) error {
+func DecryptGOB(data []byte, body any) error {
 	buf := bytes.NewBuffer(data)
 	dec := gob.NewDecoder(buf)
 	if err := dec.Decode(body); err != nil {
@@ -199,12 +202,20 @@ func HashAuth(rawHash, key string) string {
 }
 
 // other function
-func randomIV() []byte {
+func randomIV() ([]byte, error) {
+	config, err := LoadConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	if config.Mode == "DEVERLOP" {
+		return []byte("0123456789ABCDEF"), nil
+	}
 	iv := make([]byte, aes.BlockSize)
 	if _, err := rand.Read(iv); err != nil {
 		log.Fatal(err)
 	}
-	return iv
+	return iv, nil
 }
 
 func pkcs5UnPadding(src []byte) []byte {

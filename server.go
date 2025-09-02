@@ -25,7 +25,7 @@ func StartServer() {
 
 	// Initialize services
 	encryptionJWT := service.NewJWTEncryption()
-	middleware := service.NewMiddlewareUtil(encryptionJWT)
+	middleware := service.NewMiddlewareUtil(encryptionJWT, cacheRedis)
 	memberUtil := service.NewMemberUtil(db, middleware, cacheRedis)
 
 	// Initialize HTTP server

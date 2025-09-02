@@ -4,17 +4,27 @@ import (
 	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/internal/core/port"
 	"Badminton-Hub/util"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"time"
 )
 
 type MiddlewareUtil struct {
-	Encryption port.Encryption
+	encryption port.Encryption
+	cache      port.Cache
 }
 
-func NewMiddlewareUtil(encryption port.Encryption) *MiddlewareUtil {
+func NewMiddlewareUtil(encryption port.Encryption, cache port.Cache) *MiddlewareUtil {
 	return &MiddlewareUtil{
-		Encryption: encryption,
+		encryption: encryption,
+		cache:      cache,
 	}
+}
+
+func (m *MiddlewareUtil) Encryptetion() port.Encryption {
+	return m.encryption
 }
 
 func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
@@ -30,7 +40,7 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	token = token[len("Bearer "):]
 
 	// ถอด authentication token ที่ส่งมาจาก client
-	authBody, err := util.ValidateBearerToken(m.Encryption, token)
+	authBody, err := util.ValidateBearerToken(m.encryption, token)
 	if err != nil {
 		response.Code = domain.ErrValidateToken.Code
 		response.Err = domain.ErrValidateToken.Err
@@ -60,6 +70,62 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	return 200, response
 }
 
-func (m *MiddlewareUtil) Encryptetion() port.Encryption {
-	return m.Encryption
+func (m *MiddlewareUtil) GoogleLoginCallback(state, code string) (int, domain.ResponseGoogleLoginCallback) {
+	fmt.Println("GoogleLoginCallback Start")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	response := domain.ResponseGoogleLoginCallback{}
+	googleConfig, err := util.GoogleConfig("LOGIN")
+	if err != nil {
+		response.ErrorCode = domain.ErrLoadConfig.Code
+		response.Error = domain.ErrLoadConfig.Err
+		response.Message = domain.ErrLoadConfig.Msg
+		return http.StatusInternalServerError, response
+	}
+
+	googleOAuthConfig := googleConfig.Config
+
+	// check state
+	if ok, err := m.cache.GetGoogleState(state); err != nil || !ok {
+		response.ErrorCode = domain.ErrInvalidOAuthState.Code
+		response.Error = domain.ErrInvalidOAuthState.Err
+		response.Message = domain.ErrInvalidOAuthState.Msg
+		return http.StatusUnauthorized, response
+	}
+	// m.cache.DelGoogleState(state)
+
+	fmt.Println("Code :", code)
+	token, err := googleOAuthConfig.Exchange(ctx, code)
+	if err != nil {
+		response.ErrorCode = domain.ErrInvalidOAuthExchange.Code
+		response.Error = domain.ErrInvalidOAuthExchange.Err
+		response.Message = domain.ErrInvalidOAuthExchange.Msg
+		return http.StatusUnauthorized, response
+	}
+
+	// ใช้ token เรียก API ของ Google เพื่อดึงข้อมูลผู้ใช้
+	client := googleOAuthConfig.Client(ctx, token)
+	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	if err != nil {
+		response.ErrorCode = domain.ErrInvalidOAuthClient.Code
+		response.Error = domain.ErrInvalidOAuthClient.Err
+		response.Message = domain.ErrInvalidOAuthClient.Msg
+		return http.StatusUnauthorized, response
+	}
+	defer resp.Body.Close()
+
+	// var userInfo map[string]interface{}
+	var userInfo domain.GoogleUserInfo
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		response.ErrorCode = domain.ErrInvalidOAuthDecode.Code
+		response.Error = domain.ErrInvalidOAuthDecode.Err
+		response.Message = domain.ErrInvalidOAuthDecode.Msg
+		return http.StatusUnauthorized, response
+	}
+
+	response.UserInfo = userInfo
+	response.AccessToken = token.AccessToken
+	response.RefreshToken = token.RefreshToken
+	return http.StatusOK, response
 }

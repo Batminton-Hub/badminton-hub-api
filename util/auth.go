@@ -62,11 +62,20 @@ func ValidateBearerToken(encryption port.Encryption, token string) (AuthBody, er
 	return authBody, nil
 }
 
-func RandomGoogleState() string {
+func RandomGoogleState() (string, error) {
+	config, err := LoadConfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to load config: %w", err)
+	}
+
+	if config.Mode == "DEVERLOP" {
+		return "0123456789ABCDEF", nil
+	}
+
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	state := make([]byte, 32)
 	for i := range state {
 		state[i] = charset[rand.Intn(len(charset))]
 	}
-	return string(state)
+	return string(state), nil
 }

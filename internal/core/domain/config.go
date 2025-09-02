@@ -3,8 +3,14 @@ package domain
 import "golang.org/x/oauth2"
 
 type InternalConfig struct {
-	DBName     string
+	// Mode
+	Mode string
+
+	// Server
 	ServerPort string
+
+	// Database
+	DBName     string
 	MongoDBURL string
 
 	// Key

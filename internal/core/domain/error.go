@@ -29,6 +29,7 @@ var (
 
 	// OAuth
 	ErrInvalidOAuthState    = errorNew(1009, "Invalid OAuth state")
+	ErrSetGoogleState       = errorNew(1013, "Failed to set Google OAuth state")
 	ErrInvalidOAuthExchange = errorNew(1010, "Invalid OAuth exchange")
 	ErrInvalidOAuthClient   = errorNew(1011, "Invalid OAuth client")
 	ErrInvalidOAuthDecode   = errorNew(1012, "Invalid OAuth decode")

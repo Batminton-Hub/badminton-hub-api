@@ -22,3 +22,7 @@ func (c *CacheUtil) GetGoogleState(key string) (bool, error) {
 func (c *CacheUtil) SetGoogleState(key string, lt time.Duration) error {
 	return c.cache.SetGoogleState(key, lt)
 }
+
+func (c *CacheUtil) DelGoogleState(key string) error {
+	return c.cache.DelGoogleState(key)
+}

@@ -15,7 +15,6 @@ type MemberController interface {
 	RegisterMember(c *gin.Context)
 	Login(c *gin.Context)
 	GoogleLogin(c *gin.Context)
-	GoogleLoginCallback(c *gin.Context)
 	GoogleRegister(c *gin.Context)
 	GoogleRegisterCallback(c *gin.Context)
 }
@@ -52,22 +51,6 @@ func (m *MemberControllerImpl) GoogleLogin(c *gin.Context) {
 	httpStatus, response := m.MemberUtil.GoogleLogin()
 
 	c.Redirect(httpStatus, response.URL)
-}
-
-func (m *MemberControllerImpl) GoogleLoginCallback(c *gin.Context) {
-	state := c.Query("state")
-	code := c.Query("code")
-
-	httpStatus, response := m.MemberUtil.GoogleLoginCallback(state, code)
-	if httpStatus != http.StatusOK {
-		c.AbortWithStatus(httpStatus)
-		return
-	}
-
-	c.Set("response", response)
-	c.Set("type_login", "google")
-
-	c.Next()
 }
 
 func (m *MemberControllerImpl) GoogleRegister(c *gin.Context) {

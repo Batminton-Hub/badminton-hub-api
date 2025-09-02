@@ -18,6 +18,9 @@ func LoadConfig() (domain.InternalConfig, error) {
 	godotenv.Load()
 
 	config := domain.InternalConfig{
+		// Mode
+		Mode: getEnv("Mode", "DEVERLOP"), // DEVERLOP, UAT , PRODUCTION
+
 		// Server
 		ServerPort: getEnv("Server_Port", "8080"),
 
