@@ -1,6 +1,7 @@
 package mongodb
 
 import (
+	"Badminton-Hub/util"
 	"context"
 	"time"
 
@@ -17,7 +18,12 @@ type MongoDB struct {
 
 // func NewMongoDB() port.DatabaseService {
 func NewMongoDB(dbName string) *MongoDB {
-	client, err := mongo.Connect(options.Client().ApplyURI("mongodb://localhost:27017"))
+	config, err := util.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	client, err := mongo.Connect(options.Client().ApplyURI(config.MongoDBURL))
 	if err != nil {
 		panic(err)
 	}

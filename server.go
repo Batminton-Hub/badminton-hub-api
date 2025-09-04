@@ -2,13 +2,16 @@ package server
 
 import (
 	"Badminton-Hub/internal/adapter/inbound/handler/http/gin"
+	redisCache "Badminton-Hub/internal/adapter/outbound/cache/redis"
 	mongodb "Badminton-Hub/internal/adapter/outbound/database/mongoDB"
 	"Badminton-Hub/internal/core/service"
-	core_util "Badminton-Hub/internal/util"
 	"Badminton-Hub/util"
 )
 
 func StartServer() {
+	defer util.ShutdownServer()
+
+	// Load configuration
 	config, err := util.LoadConfig()
 	if err != nil {
 		panic("Failed to load configuration: " + err.Error())
@@ -17,12 +20,23 @@ func StartServer() {
 	// Initialize MongoDB
 	db := mongodb.NewMongoDB(config.DBName)
 
-	middleware := core_util.NewMiddlewareUtil()
-	memberUtil := core_util.NewMemberUtil(db)
+	// Initialize Redis cache
+	cacheRedis := redisCache.NewRedisCache()
 
-	externalRoute := gin.NewGinMainRoute(middleware, memberUtil)
+	// Initialize services
+	encryptionJWT := service.NewJWTEncryption()
+	middleware := service.NewMiddlewareUtil(encryptionJWT, cacheRedis)
+	memberUtil := service.NewMemberUtil(db, middleware, cacheRedis)
 
-	mainRoute := service.NewMainRoute(externalRoute)
+	// Initialize HTTP server
+	externalRoute := gin.NewGinMainRoute(
+		middleware,
+		memberUtil,
+	)
 
-	mainRoute.RouteMember()
+	externalRoute.Start()
+	defer externalRoute.Run()
+
+	externalRoute.RouteMember()
+	externalRoute.RouteTest()
 }

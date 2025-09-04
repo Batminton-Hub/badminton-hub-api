@@ -2,63 +2,57 @@ package util
 
 import (
 	"Badminton-Hub/internal/core/domain"
-	"encoding/json"
+	"Badminton-Hub/internal/core/port"
 	"fmt"
+	"math/rand"
 	"time"
 )
 
 type AuthBody struct {
-	Exp  int64             `json:"exp"`
-	Data domain.AuthMember `json:"data"`
-	// Data interface{} `json:"data"`
+	Exp        int64             `json:"exp"`
+	Data       domain.AuthMember `json:"data"`
+	Permission map[string]int    `json:"permission"`
 }
 
-func GenBearerToken(member domain.Member) (string, error) {
+func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (string, error) {
+	var token string
+	config, err := LoadConfig()
+	if err != nil {
+		return token, fmt.Errorf("failed to load config: %w", err)
+	}
+
 	lt := time.Duration(5 * time.Minute)
 	exp := time.Now().Add(lt).Unix()
 	createAt := time.Now().UTC()
-	rawHash := member.Email + member.Username + fmt.Sprint(createAt) + "test"
-	// authBody := AuthBody{
-	// 	Data: domain.AuthMember{
-	// 		UserID: member.Hash,
-	// 		CreatedAt: createAt,
-	// 	},
-	// }
+	byteHash, err := EncryptGOB(hashBody)
+	if err != nil {
+		return token, fmt.Errorf("failed to encrypt hash body: %w", err)
+	}
+	rawHash := string(byteHash)
 	authBody := AuthBody{
 		Exp: exp,
 		Data: domain.AuthMember{
-			// Email:     member.Email,
-			// Username:  member.Username,
 			CreatedAt: createAt,
-			HashAuth:  HashAuth(rawHash),
+			HashAuth:  HashAuth(rawHash, config.KeyHashAuth),
 		},
 	}
 
-	bytesAuth, err := json.Marshal(authBody)
+	encryptedMember, err := encryption.Encrypte(authBody, "your-encryption-key-here", lt)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal member: %w", err)
+		return token, fmt.Errorf("failed to encrypt member: %w", err)
 	}
 
-	encryptedMember, err := AESEncrypt(string(bytesAuth), "your-encryption-key-here")
-	if err != nil {
-		return "", fmt.Errorf("failed to encrypt member: %w", err)
-	}
-
-	token := encryptedMember
+	token = encryptedMember
 
 	return token, nil
 }
 
-func ValidateBearerToken(token string) (AuthBody, error) {
+func ValidateBearerToken(encryption port.Encryption, token string) (AuthBody, error) {
 	authBody := AuthBody{}
-	decrypted, err := AESDecrypt(token, "your-encryption-key-here")
-	if err != nil {
-		fmt.Println("Error decrypting token:", err)
-		return authBody, fmt.Errorf("failed to decrypt token: %w", err)
-	}
 
-	if err = json.Unmarshal(decrypted, &authBody); err != nil {
-		return authBody, fmt.Errorf("failed to unmarshal decrypted token: %w", err)
+	err := encryption.Decrypte(token, "your-encryption-key-here", &authBody)
+	if err != nil {
+		return authBody, err
 	}
 
 	if authBody.Exp < time.Now().Unix() {
@@ -66,4 +60,22 @@ func ValidateBearerToken(token string) (AuthBody, error) {
 	}
 
 	return authBody, nil
+}
+
+func RandomGoogleState() (string, error) {
+	config, err := LoadConfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to load config: %w", err)
+	}
+
+	if config.Mode == "DEVERLOP" {
+		return "0123456789ABCDEF", nil
+	}
+
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	state := make([]byte, 32)
+	for i := range state {
+		state[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(state), nil
 }

@@ -16,9 +16,9 @@ func (db *MongoDB) RegisterMember(ctx context.Context, member domain.Member) err
 	_, err := collection.InsertOne(ctx, member)
 	if err != nil {
 		if strings.Contains(err.Error(), "index: email_1 dup key") {
-			return domain.ErrMemberRegisterFailDuplicateEmail
+			return domain.ErrMemberRegisterFailDuplicateEmail.Err
 		} else if strings.Contains(err.Error(), "index: hash_1 dup key") {
-			return domain.ErrMemberRegisterFailDuplicateHash
+			return domain.ErrMemberRegisterFailDuplicateHash.Err
 		} else {
 			return err
 		}
@@ -27,7 +27,7 @@ func (db *MongoDB) RegisterMember(ctx context.Context, member domain.Member) err
 	return nil
 }
 
-func (db *MongoDB) LoginByEmail(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error) {
+func (db *MongoDB) FindEmailMember(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error) {
 	collection := db.Database.Collection("members")
 	member := domain.Member{}
 	filter := bson.M{
@@ -37,7 +37,7 @@ func (db *MongoDB) LoginByEmail(ctx context.Context, loginForm domain.LoginForm)
 	if err != nil {
 		fmt.Println("Error finding member:", err)
 		if err == mongo.ErrNoDocuments {
-			return member, domain.ErrMemberEmailNotFound
+			return member, domain.ErrMemberEmailNotFound.Err
 		}
 		return member, err
 	}

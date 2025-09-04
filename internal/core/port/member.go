@@ -8,10 +8,12 @@ import (
 type MemberUtil interface {
 	RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember)
 	Login(loginForm domain.LoginForm) (int, domain.ResponseLogin)
+	GoogleLogin() (int, domain.ResponseGoogleLogin)
+	GoogleRegister() (int, domain.ResponseGoogleRegister)
+	GoogleRegisterCallback(state, code string) (int, domain.ResponseGoogleRegisterCallback)
 }
 
 type MemberRepo interface {
 	RegisterMember(ctx context.Context, member domain.Member) error
-	LoginByEmail(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error)
-	// LoginByClerk(ctx context.Context, clerk string) (domain.Member, error)
+	FindEmailMember(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error)
 }
