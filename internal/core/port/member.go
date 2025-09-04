@@ -8,12 +8,16 @@ import (
 type MemberUtil interface {
 	RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember)
 	Login(loginForm domain.LoginForm) (int, domain.ResponseLogin)
-	GoogleLogin() (int, domain.ResponseGoogleLogin)
-	GoogleRegister() (int, domain.ResponseGoogleRegister)
-	GoogleRegisterCallback(state, code string) (int, domain.ResponseGoogleRegisterCallback)
+	GoogleRegister(responseGoogle any) (int, domain.ResponseRegisterMember)
+	GoogleLogin(responseGoogle any) (int, domain.ResponseLogin)
+}
+
+type RedirectUtil interface {
+	GoogleLogin() (int, domain.ResponseRedirectGoogleLogin)
+	GoogleRegister() (int, domain.ResponseRedirectGoogleRegister)
 }
 
 type MemberRepo interface {
 	RegisterMember(ctx context.Context, member domain.Member) error
-	FindEmailMember(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error)
+	FindEmailMember(ctx context.Context, email string) (domain.Member, error)
 }

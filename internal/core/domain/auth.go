@@ -16,12 +16,12 @@ type HashAuth struct {
 }
 
 type AuthResponse struct {
-	Code int   `json:"error_code,omitempty"`
-	Err  error `json:"error,omitempty"`
+	Code    int    `json:"error_code,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 type AuthBody struct {
-	Exp        int64          `json:"exp"`
-	Data       AuthMember     `json:"data"`
-	Permission map[string]int `json:"permission"`
+	Exp        int64      `json:"exp"`
+	Data       AuthMember `json:"data"`
+	Permission []string   `json:"permission"`
 }

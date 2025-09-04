@@ -7,6 +7,7 @@ type MiddlewareUtil interface {
 	Encryptetion() Encryption
 	Authenticate(token string) (int, domain.AuthResponse)
 	GoogleLoginCallback(state, code string) (int, domain.ResponseGoogleLoginCallback)
+	GoogleRegisterCallback(state, code string) (int, domain.ResponseGoogleRegisterCallback)
 }
 
 // type Authentication interface {

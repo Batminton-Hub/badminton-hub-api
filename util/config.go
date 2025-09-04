@@ -35,8 +35,8 @@ func SetConfig() {
 		KeyHashPassword: getEnv("Key_Hash_Password", "default_hash_key"),
 
 		// Google OAuth
-		GoogleLoginRedirectURL:    getEnv("Google_Login_URL", "http://localhost:8080/member/auth/google/login/callback"),
-		GoogleRegisterRedirectURL: getEnv("Google_Register_URL", "http://localhost:8080/member/auth/google/register/callback"),
+		GoogleLoginRedirectURL:    getEnv("Google_Login_URL", "http://localhost:8080/member/auth/google/callback/login"),
+		GoogleRegisterRedirectURL: getEnv("Google_Register_URL", "http://localhost:8080/member/auth/google/callback/register"),
 		GoogleClinentID:           getEnv("Google_Client_ID", "1030829763252-hngbodu9d2vqu2c82n80f86gl8urtq5n.apps.googleusercontent.com"),
 		GoogleClientSecret:        getEnv("Google_Client_Secret", "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"),
 

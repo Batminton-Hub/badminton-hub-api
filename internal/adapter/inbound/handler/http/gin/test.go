@@ -24,8 +24,8 @@ func TestFunc(c *gin.Context) {
 }
 
 func TestLogin(c *gin.Context) {
-	typeLogin, ok := c.Get("type_login")
-	fmt.Println(ok, " : ", typeLogin)
+	platform, ok := c.Get("platform")
+	fmt.Println(ok, " : ", platform)
 
 	rawResponse, ok := c.Get("response")
 	fmt.Println(ok, " : ", rawResponse)

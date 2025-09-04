@@ -1,42 +1,58 @@
 package domain
 
-import "errors"
+import "fmt"
 
-type Error struct {
+type ErrorResp struct {
 	Code int
 	Msg  string
 	Err  error
 }
 
-func errorNew(code int, msg string) Error {
-	return Error{
+type SuccessResp struct {
+	Code int
+	Msg  string
+}
+
+func errorNew(code int, msg string) ErrorResp {
+	return ErrorResp{
 		Code: code,
 		Msg:  msg,
-		Err:  errors.New(msg),
+		Err:  fmt.Errorf("%s", msg),
+	}
+}
+
+func successNew(code int, msg string) SuccessResp {
+	return SuccessResp{
+		Code: code,
+		Msg:  msg,
 	}
 }
 
 var (
+	//////////////////////// Success Code ////////////////////////
+	Success = successNew(0, "Success")
+
+	//////////////////////// Error Code ////////////////////////
 	// Config
 	ErrLoadConfig = errorNew(1000, "Failed to load config")
 
 	// Member
-	ErrMemberRegisterFailDuplicateEmail = errorNew(1003, "Register member failed: duplicate email")
-	ErrMemberRegisterFailDuplicateHash  = errorNew(1004, "Register member failed: duplicate hash")
-	ErrMemberEmailNotFound              = errorNew(1005, "Email not found")
-	ErrCreateMemberFail                 = errorNew(1002, "Failed to create member")
-	ErrLoginHashPassword                = errorNew(1006, "Failed to hash password")
+	ErrMemberRegisterFailDuplicateEmail = errorNew(2000, "Register member failed: duplicate email")
+	ErrMemberRegisterFailDuplicateHash  = errorNew(2001, "Register member failed: duplicate hash")
+	ErrMemberEmailNotFound              = errorNew(2002, "Email not found")
+	ErrCreateMemberFail                 = errorNew(2003, "Failed to create member")
+	ErrLoginHashPassword                = errorNew(2004, "Failed to hash password")
 
 	// OAuth
-	ErrInvalidOAuthState    = errorNew(1009, "Invalid OAuth state")
-	ErrSetGoogleState       = errorNew(1013, "Failed to set Google OAuth state")
-	ErrInvalidOAuthExchange = errorNew(1010, "Invalid OAuth exchange")
-	ErrInvalidOAuthClient   = errorNew(1011, "Invalid OAuth client")
-	ErrInvalidOAuthDecode   = errorNew(1012, "Invalid OAuth decode")
+	ErrInvalidOAuthState    = errorNew(3000, "Invalid OAuth state")
+	ErrSetGoogleState       = errorNew(3001, "Failed to set Google OAuth state")
+	ErrInvalidOAuthExchange = errorNew(3002, "Invalid OAuth exchange")
+	ErrInvalidOAuthClient   = errorNew(3003, "Invalid OAuth client")
+	ErrInvalidOAuthDecode   = errorNew(3004, "Invalid OAuth decode")
 
 	// Token
-	ErrGenerateToken    = errorNew(1006, "Failed to generate token")
-	ErrValidateToken    = errorNew(1007, "Failed to validate token")
-	ErrValidateHashAuth = errorNew(1008, "Failed to validate hash auth")
-	ErrTokenExpired     = errorNew(1009, "Token has expired")
+	ErrGenerateToken    = errorNew(4000, "Failed to generate token")
+	ErrValidateToken    = errorNew(4001, "Failed to validate token")
+	ErrValidateHashAuth = errorNew(4002, "Failed to validate hash auth")
+	ErrTokenExpired     = errorNew(4003, "Token has expired")
 )

@@ -8,10 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type MiddlewareController interface {
-	Authenticate(c *gin.Context)
-	GoogleLoginCallback(c *gin.Context)
-}
+const google = "GOOGLE"
+
 type MiddlewareControllerImpl struct {
 	port.MiddlewareUtil
 }
@@ -33,13 +31,30 @@ func (m *MiddlewareControllerImpl) GoogleLoginCallback(c *gin.Context) {
 
 	httpStatus, response := m.MiddlewareUtil.GoogleLoginCallback(state, code)
 	if httpStatus != http.StatusOK {
-		fmt.Println("GoogleLoginCallback error:", response.Error)
+		fmt.Println("GoogleLoginCallback error:", response.Message)
 		c.AbortWithStatus(httpStatus)
 		return
 	}
 
 	c.Set("response", response)
-	c.Set("type_login", "google")
+	c.Set("platform", google)
+
+	c.Next()
+}
+
+func (m *MiddlewareControllerImpl) GoogleRegisterCallback(c *gin.Context) {
+	state := c.Query("state")
+	code := c.Query("code")
+
+	httpStatus, response := m.MiddlewareUtil.GoogleRegisterCallback(state, code)
+	if httpStatus != http.StatusOK {
+		fmt.Println("GoogleRegisterCallback error:", response.Message)
+		c.AbortWithStatus(httpStatus)
+		return
+	}
+
+	c.Set("response", response)
+	c.Set("platform", google)
 
 	c.Next()
 }

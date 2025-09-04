@@ -6,22 +6,24 @@ import (
 
 // Member Structure
 type Member struct {
-	UserID       string    `json:"user_id"`       // Unique user ID
-	Username     string    `json:"username"`      // Unique username
-	DisplayName  string    `json:"display_name"`  // Display name
-	Password     string    `json:"password"`      // Password hash
-	Email        string    `json:"email"`         // Unique email
-	Phone        string    `json:"phone"`         // Unique phone number
-	Hash         string    `json:"hash"`          // Unique hash for password reset or verification
-	Status       string    `json:"status"`        // ACTIVE, BANNED, DELETED
-	CreatedAt    time.Time `json:"created_at"`    // Creation timestamp
-	UpdatedAt    time.Time `json:"updated_at"`    // Last update timestamp
-	Tag          []string  `json:"tag"`           // Tags for categorization
-	MainTag      []string  `json:"main_tag"`      // Main tag for categorization
-	Gender       string    `json:"gender"`        // Gender
-	ProfileImage string    `json:"profile_image"` // URL to profile image
-	DateOfBirth  string    `json:"date_of_birth"` // Date of birth in YYYY-MM-DD format
-	Region       string    `json:"region"`        // Region or country
+	UserID       string    `json:"user_id" bson:"user_id"`             // Unique user ID
+	Username     string    `json:"username" bson:"username"`           // Unique username
+	DisplayName  string    `json:"display_name" bson:"display_name"`   // Display name
+	Password     string    `json:"password" bson:"password"`           // Password hash
+	Email        string    `json:"email" bson:"email"`                 // Unique email
+	Phone        string    `json:"phone" bson:"phone"`                 // Unique phone number
+	Hash         string    `json:"hash" bson:"hash"`                   // Unique hash for password reset or verification
+	Status       string    `json:"status" bson:"status"`               // ACTIVE, BANNED, DELETED
+	CreatedAt    time.Time `json:"created_at" bson:"created_at"`       // Creation timestamp
+	UpdatedAt    time.Time `json:"updated_at" bson:"updated_at"`       // Last update timestamp
+	Tag          []string  `json:"tag" bson:"tag"`                     // Tags for categorization
+	MainTag      []string  `json:"main_tag" bson:"main_tag"`           // Main tag for categorization
+	Gender       string    `json:"gender" bson:"gender"`               // Gender
+	ProfileImage string    `json:"profile_image" bson:"profile_image"` // URL to profile image
+	DateOfBirth  string    `json:"date_of_birth" bson:"date_of_birth"` // Date of birth in YYYY-MM-DD format
+	Region       string    `json:"region" bson:"region"`               // Region or country
+	Permission   []string  `json:"permission" bson:"permission"`       // Permission
+	GoogleID     string    `json:"google_id" bson:"google_id"`         // Google ID
 	// Address     Address   `json:"address"`      // Address details
 }
 
@@ -48,44 +50,51 @@ type RegisterForm struct {
 
 type ResponseRegisterMember struct {
 	BearerToken string `json:"bearer_token,omitempty"`
-	ErrorCode   int    `json:"error_code,omitempty"`
-	Error       error  `json:"error,omitempty"`
+	Code        int    `json:"code,omitempty"`
 	Message     string `json:"message,omitempty"`
 }
 
 // Login Structure
 type LoginForm struct {
-	Email    string `json:"email" binding:"required,email"`    // email
-	Password string `json:"password" binding:"required,min=6"` // password
-	Clerk    string `json:"clerk"`                             // Clerk token ได้มาจากการ login ด้วย platform อื่น ๆ
+	Email      string `json:"email" binding:"required,email"`    // email
+	Password   string `json:"password" binding:"required,min=6"` // password
+	Platform   string `json:"platform"`                          // platform
+	PlatformID string `json:"platform_id"`                       // platform id
 }
 
 type ResponseLogin struct {
 	BearerToken string `json:"bearer_token,omitempty"`
-	ErrorCode   int    `json:"error_code,omitempty"`
-	Error       error  `json:"error,omitempty"`
+	Code        int    `json:"code,omitempty"`
 	Message     string `json:"message,omitempty"`
 }
 
-type ResponseGoogleLogin struct {
-	URL       string `json:"url,omitempty"`
-	ErrorCode int    `json:"error_code,omitempty"`
-	Error     error  `json:"error,omitempty"`
-	Message   string `json:"message,omitempty"`
+type ResponseRedirectGoogleLogin struct {
+	URL     string `json:"url,omitempty"`
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+type ResponseRedirectGoogleRegister struct {
+	URL     string `json:"url,omitempty"`
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 type ResponseGoogleLoginCallback struct {
 	UserInfo     GoogleUserInfo `json:"user_info,omitempty"`
 	AccessToken  string         `json:"access_token,omitempty"`
 	RefreshToken string         `json:"refresh_token,omitempty"`
-	ErrorCode    int            `json:"error_code,omitempty"`
-	Error        error          `json:"error,omitempty"`
+	Code         int            `json:"code,omitempty"`
 	Message      string         `json:"message,omitempty"`
 }
 
-type ResponseGoogleRegister struct{}
-
-type ResponseGoogleRegisterCallback struct{}
+type ResponseGoogleRegisterCallback struct {
+	UserInfo     GoogleUserInfo `json:"user_info,omitempty"`
+	AccessToken  string         `json:"access_token,omitempty"`
+	RefreshToken string         `json:"refresh_token,omitempty"`
+	Code         int            `json:"code,omitempty"`
+	Message      string         `json:"message,omitempty"`
+}
 
 type GoogleUserInfo struct {
 	Email         string `json:"email"`

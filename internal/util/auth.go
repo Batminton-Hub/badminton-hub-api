@@ -5,7 +5,6 @@ import (
 	"Badminton-Hub/internal/core/port"
 	"Badminton-Hub/util"
 	"fmt"
-	"math/rand"
 	"time"
 )
 
@@ -73,10 +72,6 @@ func RandomGoogleState() (string, error) {
 		return config.DefaultGoogleState, nil
 	}
 
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	state := make([]byte, 32)
-	for i := range state {
-		state[i] = charset[rand.Intn(len(charset))]
-	}
+	state := util.RandomString(32, true, true, false)
 	return string(state), nil
 }
