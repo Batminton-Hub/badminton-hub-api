@@ -12,12 +12,13 @@ import (
 )
 
 var googleOAuth = &domain.GoogleOAuth{}
+var config = &domain.InternalConfig{}
 
 // Server Config
-func LoadConfig() (domain.InternalConfig, error) {
+func SetConfig() {
 	godotenv.Load()
 
-	config := domain.InternalConfig{
+	config = &domain.InternalConfig{
 		// Mode
 		Mode: getEnv("Mode", "DEVERLOP"), // DEVERLOP, UAT , PRODUCTION
 
@@ -43,9 +44,16 @@ func LoadConfig() (domain.InternalConfig, error) {
 		RedisCacheAddr:     getEnv("Redis_Cache_Addr", "localhost:6379"),
 		RedisCachePassword: getEnv("Redis_Cache_Password", ""),
 		RedisCacheDB:       getEnv("Redis_Cache_DB", 0),
+
+		// RandomFunc
+		DefaultAESIV:       getEnv("Default_AES_IV", "0123456789ABCDEF"), // 16 bytes
+		DefaultGoogleState: getEnv("Default_Google_State", "0123456789ABCDEF"),
 	}
 
-	return config, nil
+}
+
+func LoadConfig() (domain.InternalConfig, error) {
+	return *config, nil
 }
 
 // Google Config
@@ -78,6 +86,7 @@ func GoogleConfig(typeRedirect string) (*domain.GoogleOAuth, error) {
 	return googleOAuth, nil
 }
 
+// Other Function
 func getEnv[T any](keyEnv string, defaultVal T) T {
 	value := os.Getenv(keyEnv)
 	// if value != "" {

@@ -28,6 +28,10 @@ type InternalConfig struct {
 	RedisCacheAddr     string
 	RedisCachePassword string
 	RedisCacheDB       int
+
+	// RandomFunc
+	DefaultAESIV       string // 16 bytes
+	DefaultGoogleState string
 }
 
 type GoogleOAuth struct {

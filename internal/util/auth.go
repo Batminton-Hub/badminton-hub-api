@@ -1,22 +1,23 @@
-package util
+package core_util
 
 import (
 	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/internal/core/port"
+	"Badminton-Hub/util"
 	"fmt"
 	"math/rand"
 	"time"
 )
 
-type AuthBody struct {
-	Exp        int64             `json:"exp"`
-	Data       domain.AuthMember `json:"data"`
-	Permission map[string]int    `json:"permission"`
+func HashAuth(rawHash, key string) string {
+	data := fmt.Sprint(rawHash + key)
+	hashAuth := util.Sha256(data)
+	return hashAuth
 }
 
 func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (string, error) {
 	var token string
-	config, err := LoadConfig()
+	config, err := util.LoadConfig()
 	if err != nil {
 		return token, fmt.Errorf("failed to load config: %w", err)
 	}
@@ -24,12 +25,12 @@ func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (strin
 	lt := time.Duration(5 * time.Minute)
 	exp := time.Now().Add(lt).Unix()
 	createAt := time.Now().UTC()
-	byteHash, err := EncryptGOB(hashBody)
+	byteHash, err := util.EncryptGOB(hashBody)
 	if err != nil {
 		return token, fmt.Errorf("failed to encrypt hash body: %w", err)
 	}
 	rawHash := string(byteHash)
-	authBody := AuthBody{
+	authBody := domain.AuthBody{
 		Exp: exp,
 		Data: domain.AuthMember{
 			CreatedAt: createAt,
@@ -47,8 +48,8 @@ func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (strin
 	return token, nil
 }
 
-func ValidateBearerToken(encryption port.Encryption, token string) (AuthBody, error) {
-	authBody := AuthBody{}
+func ValidateBearerToken(encryption port.Encryption, token string) (domain.AuthBody, error) {
+	authBody := domain.AuthBody{}
 
 	err := encryption.Decrypte(token, "your-encryption-key-here", &authBody)
 	if err != nil {
@@ -63,13 +64,13 @@ func ValidateBearerToken(encryption port.Encryption, token string) (AuthBody, er
 }
 
 func RandomGoogleState() (string, error) {
-	config, err := LoadConfig()
+	config, err := util.LoadConfig()
 	if err != nil {
 		return "", fmt.Errorf("failed to load config: %w", err)
 	}
 
 	if config.Mode == "DEVERLOP" {
-		return "0123456789ABCDEF", nil
+		return config.DefaultGoogleState, nil
 	}
 
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

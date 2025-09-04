@@ -12,6 +12,7 @@ func StartServer() {
 	defer util.ShutdownServer()
 
 	// Load configuration
+	util.SetConfig()
 	config, err := util.LoadConfig()
 	if err != nil {
 		panic("Failed to load configuration: " + err.Error())

@@ -3,6 +3,7 @@ package service
 import (
 	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/internal/core/port"
+	core_util "Badminton-Hub/internal/util"
 	"Badminton-Hub/util"
 	"context"
 	"net/http"
@@ -40,11 +41,11 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 	createAt := time.Now()
 	updateAt := time.Now()
 	memberBody := domain.Member{
-		UserID:    util.GenUserID(registerForm.Email, registerForm.Password),
+		UserID:    core_util.GenUserID(registerForm.Email, registerForm.Password),
 		Email:     registerForm.Email,
-		Password:  util.HashPassword(registerForm.Password, config.KeyHashPassword),
+		Password:  core_util.HashPassword(registerForm.Password, config.KeyHashPassword),
 		Gender:    registerForm.Gender,
-		Hash:      util.GenerateHash(config.KeyHashMember),
+		Hash:      core_util.GenerateHash(config.KeyHashMember),
 		CreatedAt: createAt,
 		UpdatedAt: updateAt,
 	}
@@ -62,7 +63,7 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	token, err := util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
+	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
 	if err != nil {
 		response.ErrorCode = domain.ErrGenerateToken.Code
 		response.Error = domain.ErrGenerateToken.Err
@@ -95,7 +96,7 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 	}
 
 	// Check password
-	if memberBody.Password != util.HashPassword(loginForm.Password, config.KeyHashPassword) {
+	if memberBody.Password != core_util.HashPassword(loginForm.Password, config.KeyHashPassword) {
 		response.ErrorCode = domain.ErrLoginHashPassword.Code
 		response.Error = domain.ErrLoginHashPassword.Err
 		return 401, response
@@ -107,7 +108,7 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	token, err := util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
+	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
 	if err != nil {
 		response.ErrorCode = domain.ErrGenerateToken.Code
 		response.Error = domain.ErrGenerateToken.Err
@@ -129,7 +130,7 @@ func (m *MemberUtil) GoogleLogin() (int, domain.ResponseGoogleLogin) {
 		return http.StatusInternalServerError, response
 	}
 
-	if googleConfig.State, err = util.RandomGoogleState(); err != nil {
+	if googleConfig.State, err = core_util.RandomGoogleState(); err != nil {
 		response.ErrorCode = domain.ErrLoadConfig.Code
 		response.Error = domain.ErrLoadConfig.Err
 		response.Message = domain.ErrLoadConfig.Msg

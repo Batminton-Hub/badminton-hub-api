@@ -23,6 +23,8 @@ func HttpServer(handler http.Handler) *http.Server {
 		Addr:    config.ServerPort,
 		Handler: handler,
 	}
+
+	fmt.Println("Server port:", config.ServerPort)
 	return srv
 }
 

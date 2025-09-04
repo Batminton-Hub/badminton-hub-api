@@ -7,7 +7,7 @@ import (
 )
 
 type RedisCache struct {
-	Client redis.Client
+	client redis.Client
 }
 
 func NewRedisCache() *RedisCache {
@@ -23,6 +23,6 @@ func NewRedisCache() *RedisCache {
 		Protocol: 2,
 	})
 	return &RedisCache{
-		Client: *client,
+		client: *client,
 	}
 }

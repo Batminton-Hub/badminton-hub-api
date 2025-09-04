@@ -183,24 +183,6 @@ func DecryptGOB(data []byte, body any) error {
 	return nil
 }
 
-// Hash
-func GenerateHash(key string) string {
-	timeNow := time.Now().UnixMilli()
-	data := fmt.Sprint(key, timeNow)
-	hash := Sha256(data)
-	return hash
-}
-func HashPassword(password, key string) string {
-	data := fmt.Sprint(password, key)
-	newPassword := Sha256(data)
-	return newPassword
-}
-func HashAuth(rawHash, key string) string {
-	data := fmt.Sprint(rawHash + key)
-	hashAuth := Sha256(data)
-	return hashAuth
-}
-
 // other function
 func randomIV() ([]byte, error) {
 	config, err := LoadConfig()
@@ -209,7 +191,7 @@ func randomIV() ([]byte, error) {
 	}
 
 	if config.Mode == "DEVERLOP" {
-		return []byte("0123456789ABCDEF"), nil
+		return []byte(config.DefaultAESIV), nil
 	}
 	iv := make([]byte, aes.BlockSize)
 	if _, err := rand.Read(iv); err != nil {

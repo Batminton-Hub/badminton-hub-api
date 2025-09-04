@@ -3,6 +3,7 @@ package service
 import (
 	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/internal/core/port"
+	core_util "Badminton-Hub/internal/util"
 	"Badminton-Hub/util"
 	"context"
 	"encoding/json"
@@ -16,15 +17,13 @@ type MiddlewareUtil struct {
 	cache      port.Cache
 }
 
+func (m *MiddlewareUtil) Encryptetion() port.Encryption { return m.encryption }
+
 func NewMiddlewareUtil(encryption port.Encryption, cache port.Cache) *MiddlewareUtil {
 	return &MiddlewareUtil{
 		encryption: encryption,
 		cache:      cache,
 	}
-}
-
-func (m *MiddlewareUtil) Encryptetion() port.Encryption {
-	return m.encryption
 }
 
 func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
@@ -40,7 +39,7 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	token = token[len("Bearer "):]
 
 	// ถอด authentication token ที่ส่งมาจาก client
-	authBody, err := util.ValidateBearerToken(m.encryption, token)
+	authBody, err := core_util.ValidateBearerToken(m.encryption, token)
 	if err != nil {
 		response.Code = domain.ErrValidateToken.Code
 		response.Err = domain.ErrValidateToken.Err
@@ -53,7 +52,7 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 		return 401, response
 	}
 	rawHash := string(byteAuth)
-	hashauth := util.HashAuth(rawHash, config.KeyHashAuth)
+	hashauth := core_util.HashAuth(rawHash, config.KeyHashAuth)
 	if authBody.Data.HashAuth != hashauth {
 		response.Code = domain.ErrValidateHashAuth.Code
 		response.Err = domain.ErrValidateHashAuth.Err
