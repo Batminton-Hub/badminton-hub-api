@@ -1,7 +1,6 @@
 package gin
 
 import (
-	"Badminton-Hub/internal/core/port"
 	"Badminton-Hub/util"
 	"fmt"
 	"net/http"
@@ -9,32 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type MainRoute struct {
-	MiddlewareController MiddlewareController
-	MemberController     MemberController
-	Engine               *gin.Engine
-}
-
-func NewGinMainRoute(
-	middleware port.MiddlewareUtil,
-	memberUtil port.MemberUtil,
-) *MainRoute {
-	return &MainRoute{
-		MiddlewareController: &MiddlewareControllerImpl{middleware},
-		MemberController:     &MemberControllerImpl{memberUtil},
-	}
-}
-
 func (m *MainRoute) RouteMember() {
 	member := m.Engine.Group("/member")
 	{
 		member.POST("/register", m.MemberController.RegisterMember)
 		member.POST("/login", m.MemberController.Login)
-		member.GET("/google/login", m.MemberController.GoogleLogin)
-		member.GET("/auth/google/login/callback", m.MiddlewareController.GoogleLoginCallback, TestLogin)
-		member.GET("/google/register", m.MemberController.GoogleRegister)
-		member.GET("/auth/google/register/callback", m.MemberController.GoogleRegisterCallback)
-		// member.GET("/authenticate", m.MiddlewareController.Authenticate, TestFunc())
+		member.GET("/google/login", m.RedirectController.GoogleLogin)
+		member.GET("/google/register", m.RedirectController.GoogleRegister)
+		member.GET("/auth/google/callback/login", m.MiddlewareController.GoogleLoginCallback, m.MemberController.Login)
+		member.GET("/auth/google/callback/register", m.MiddlewareController.GoogleRegisterCallback, m.MemberController.RegisterMember)
 	}
 }
 

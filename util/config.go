@@ -12,12 +12,13 @@ import (
 )
 
 var googleOAuth = &domain.GoogleOAuth{}
+var config = &domain.InternalConfig{}
 
 // Server Config
-func LoadConfig() (domain.InternalConfig, error) {
+func SetConfig() error {
 	godotenv.Load()
 
-	config := domain.InternalConfig{
+	config = &domain.InternalConfig{
 		// Mode
 		Mode: getEnv("Mode", "DEVERLOP"), // DEVERLOP, UAT , PRODUCTION
 
@@ -34,8 +35,8 @@ func LoadConfig() (domain.InternalConfig, error) {
 		KeyHashPassword: getEnv("Key_Hash_Password", "default_hash_key"),
 
 		// Google OAuth
-		GoogleLoginRedirectURL:    getEnv("Google_Login_URL", "http://localhost:8080/member/auth/google/login/callback"),
-		GoogleRegisterRedirectURL: getEnv("Google_Register_URL", "http://localhost:8080/member/auth/google/register/callback"),
+		GoogleLoginRedirectURL:    getEnv("Google_Login_URL", "http://localhost:8080/member/auth/google/callback/login"),
+		GoogleRegisterRedirectURL: getEnv("Google_Register_URL", "http://localhost:8080/member/auth/google/callback/register"),
 		GoogleClinentID:           getEnv("Google_Client_ID", "1030829763252-hngbodu9d2vqu2c82n80f86gl8urtq5n.apps.googleusercontent.com"),
 		GoogleClientSecret:        getEnv("Google_Client_Secret", "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"),
 
@@ -43,17 +44,22 @@ func LoadConfig() (domain.InternalConfig, error) {
 		RedisCacheAddr:     getEnv("Redis_Cache_Addr", "localhost:6379"),
 		RedisCachePassword: getEnv("Redis_Cache_Password", ""),
 		RedisCacheDB:       getEnv("Redis_Cache_DB", 0),
+
+		// RandomFunc
+		DefaultAESIV:       getEnv("Default_AES_IV", []byte("0123456789ABCDEF")), // 16 bytes
+		DefaultGoogleState: getEnv("Default_Google_State", "0123456789ABCDEF"),
 	}
 
-	return config, nil
+	return nil
+}
+
+func LoadConfig() domain.InternalConfig {
+	return *config
 }
 
 // Google Config
 func GoogleConfig(typeRedirect string) (*domain.GoogleOAuth, error) {
-	config, err := LoadConfig()
-	if err != nil {
-		return googleOAuth, err
-	}
+	config := LoadConfig()
 	var redirectURL string
 	switch typeRedirect {
 	case "LOGIN":
@@ -78,6 +84,7 @@ func GoogleConfig(typeRedirect string) (*domain.GoogleOAuth, error) {
 	return googleOAuth, nil
 }
 
+// Other Function
 func getEnv[T any](keyEnv string, defaultVal T) T {
 	value := os.Getenv(keyEnv)
 	// if value != "" {

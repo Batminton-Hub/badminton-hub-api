@@ -12,7 +12,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -81,7 +80,7 @@ func AESEncrypt(body any, key string, lt time.Duration) (string, error) {
 	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(ciphertext, plainTextBlock)
 
-	ciphertext = append(iv, ciphertext...)
+	ciphertext = append(iv, ciphertext...) // แนบ iv ไปกับ ciphertext
 	str := base64.StdEncoding.EncodeToString(ciphertext)
 
 	return str, nil
@@ -93,6 +92,7 @@ func AESDecrypt(encryptData string, key string, body any) error {
 		return err
 	}
 
+	// แยก iv ออกจาก ciphertext
 	iv := ciphertext[:aes.BlockSize]
 	ciphertext = ciphertext[aes.BlockSize:]
 
@@ -183,37 +183,16 @@ func DecryptGOB(data []byte, body any) error {
 	return nil
 }
 
-// Hash
-func GenerateHash(key string) string {
-	timeNow := time.Now().UnixMilli()
-	data := fmt.Sprint(key, timeNow)
-	hash := Sha256(data)
-	return hash
-}
-func HashPassword(password, key string) string {
-	data := fmt.Sprint(password, key)
-	newPassword := Sha256(data)
-	return newPassword
-}
-func HashAuth(rawHash, key string) string {
-	data := fmt.Sprint(rawHash + key)
-	hashAuth := Sha256(data)
-	return hashAuth
-}
-
 // other function
 func randomIV() ([]byte, error) {
-	config, err := LoadConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config: %w", err)
-	}
+	config := LoadConfig()
 
 	if config.Mode == "DEVERLOP" {
-		return []byte("0123456789ABCDEF"), nil
+		return config.DefaultAESIV, nil
 	}
 	iv := make([]byte, aes.BlockSize)
 	if _, err := rand.Read(iv); err != nil {
-		log.Fatal(err)
+		return []byte{}, err
 	}
 	return iv, nil
 }

@@ -10,9 +10,13 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
+const (
+	MemberCollection = "members"
+)
+
 func (db *MongoDB) RegisterMember(ctx context.Context, member domain.Member) error {
 	// Implementation for registering a member in MongoDB
-	collection := db.Database.Collection("members")
+	collection := db.Database.Collection(MemberCollection)
 	_, err := collection.InsertOne(ctx, member)
 	if err != nil {
 		if strings.Contains(err.Error(), "index: email_1 dup key") {
@@ -27,11 +31,11 @@ func (db *MongoDB) RegisterMember(ctx context.Context, member domain.Member) err
 	return nil
 }
 
-func (db *MongoDB) FindEmailMember(ctx context.Context, loginForm domain.LoginForm) (domain.Member, error) {
-	collection := db.Database.Collection("members")
+func (db *MongoDB) FindEmailMember(ctx context.Context, email string) (domain.Member, error) {
+	collection := db.Database.Collection(MemberCollection)
 	member := domain.Member{}
 	filter := bson.M{
-		"email": loginForm.Email,
+		"email": email,
 	}
 	err := collection.FindOne(ctx, filter).Decode(&member)
 	if err != nil {

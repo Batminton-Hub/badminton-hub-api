@@ -14,15 +14,13 @@ import (
 var srv *http.Server
 
 func HttpServer(handler http.Handler) *http.Server {
-	config, err := LoadConfig()
-	if err != nil {
-		log.Fatal("Failed to load config:", err)
-	}
-
+	config := LoadConfig()
 	srv = &http.Server{
 		Addr:    config.ServerPort,
 		Handler: handler,
 	}
+
+	fmt.Println("Server port:", config.ServerPort)
 	return srv
 }
 

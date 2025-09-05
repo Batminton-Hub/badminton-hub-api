@@ -6,16 +6,18 @@ import (
 	mongodb "Badminton-Hub/internal/adapter/outbound/database/mongoDB"
 	"Badminton-Hub/internal/core/service"
 	"Badminton-Hub/util"
+	"log"
 )
 
 func StartServer() {
 	defer util.ShutdownServer()
 
 	// Load configuration
-	config, err := util.LoadConfig()
+	err := util.SetConfig()
 	if err != nil {
-		panic("Failed to load configuration: " + err.Error())
+		log.Fatalln("Failed to load configuration: " + err.Error())
 	}
+	config := util.LoadConfig()
 
 	// Initialize MongoDB
 	db := mongodb.NewMongoDB(config.DBName)
@@ -26,12 +28,14 @@ func StartServer() {
 	// Initialize services
 	encryptionJWT := service.NewJWTEncryption()
 	middleware := service.NewMiddlewareUtil(encryptionJWT, cacheRedis)
-	memberUtil := service.NewMemberUtil(db, middleware, cacheRedis)
+	memberUtil := service.NewMemberUtil(db, middleware)
+	redirectUtil := service.NewRedirectUtil(cacheRedis)
 
 	// Initialize HTTP server
 	externalRoute := gin.NewGinMainRoute(
 		middleware,
 		memberUtil,
+		redirectUtil,
 	)
 
 	externalRoute.Start()
