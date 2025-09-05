@@ -2,7 +2,6 @@ package gin
 
 import (
 	"Badminton-Hub/internal/core/port"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,9 +15,9 @@ type MiddlewareControllerImpl struct {
 
 func (m *MiddlewareControllerImpl) Authenticate(c *gin.Context) {
 	token := c.GetHeader("Authorization")
-	code, resp := m.MiddlewareUtil.Authenticate(token)
-	if code != 200 {
-		c.AbortWithStatusJSON(code, resp)
+	httpCode, response := m.MiddlewareUtil.Authenticate(token)
+	if httpCode != http.StatusOK {
+		RespAuth(c, httpCode, response)
 		return
 	}
 
@@ -31,8 +30,7 @@ func (m *MiddlewareControllerImpl) GoogleLoginCallback(c *gin.Context) {
 
 	httpStatus, response := m.MiddlewareUtil.GoogleLoginCallback(state, code)
 	if httpStatus != http.StatusOK {
-		fmt.Println("GoogleLoginCallback error:", response.Message)
-		c.AbortWithStatus(httpStatus)
+		RespAuth(c, httpStatus, response)
 		return
 	}
 
@@ -48,8 +46,7 @@ func (m *MiddlewareControllerImpl) GoogleRegisterCallback(c *gin.Context) {
 
 	httpStatus, response := m.MiddlewareUtil.GoogleRegisterCallback(state, code)
 	if httpStatus != http.StatusOK {
-		fmt.Println("GoogleRegisterCallback error:", response.Message)
-		c.AbortWithStatus(httpStatus)
+		RespAuth(c, httpStatus, response)
 		return
 	}
 

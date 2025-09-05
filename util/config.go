@@ -15,7 +15,7 @@ var googleOAuth = &domain.GoogleOAuth{}
 var config = &domain.InternalConfig{}
 
 // Server Config
-func SetConfig() {
+func SetConfig() error {
 	godotenv.Load()
 
 	config = &domain.InternalConfig{
@@ -46,22 +46,20 @@ func SetConfig() {
 		RedisCacheDB:       getEnv("Redis_Cache_DB", 0),
 
 		// RandomFunc
-		DefaultAESIV:       getEnv("Default_AES_IV", "0123456789ABCDEF"), // 16 bytes
+		DefaultAESIV:       getEnv("Default_AES_IV", []byte("0123456789ABCDEF")), // 16 bytes
 		DefaultGoogleState: getEnv("Default_Google_State", "0123456789ABCDEF"),
 	}
 
+	return nil
 }
 
-func LoadConfig() (domain.InternalConfig, error) {
-	return *config, nil
+func LoadConfig() domain.InternalConfig {
+	return *config
 }
 
 // Google Config
 func GoogleConfig(typeRedirect string) (*domain.GoogleOAuth, error) {
-	config, err := LoadConfig()
-	if err != nil {
-		return googleOAuth, err
-	}
+	config := LoadConfig()
 	var redirectURL string
 	switch typeRedirect {
 	case "LOGIN":

@@ -24,13 +24,13 @@ func (m *MemberControllerImpl) RegisterMember(c *gin.Context) {
 	case "GOOGLE":
 		responseGoogle, ok := c.Get("response")
 		if !ok {
-			RespError(c, http.StatusBadRequest, "Invalid input")
+			Resp(c, http.StatusBadRequest, "Invalid input")
 			return
 		}
 		httpStatus, response = m.MemberUtil.GoogleRegister(responseGoogle)
 	default:
 		if err := c.ShouldBind(&registerForm); err != nil {
-			RespError(c, http.StatusBadRequest, "Invalid input")
+			Resp(c, http.StatusBadRequest, "Invalid input")
 			return
 		}
 		httpStatus, response = m.MemberUtil.RegisterMember(registerForm)
@@ -50,13 +50,13 @@ func (m *MemberControllerImpl) Login(c *gin.Context) {
 	case "GOOGLE":
 		responseGoogle, ok := c.Get("response")
 		if !ok {
-			RespError(c, http.StatusBadRequest, "Invalid input")
+			Resp(c, http.StatusBadRequest, "Invalid input")
 			return
 		}
 		httpStatus, response = m.MemberUtil.GoogleLogin(responseGoogle)
 	default:
 		if err := c.ShouldBind(&loginForm); err != nil {
-			RespError(c, http.StatusBadRequest, "Invalid input")
+			Resp(c, http.StatusBadRequest, "Invalid input")
 			return
 		}
 		httpStatus, response = m.MemberUtil.Login(loginForm)
@@ -76,5 +76,21 @@ func (m *RedirectControllerImpl) GoogleLogin(c *gin.Context) {
 
 func (m *RedirectControllerImpl) GoogleRegister(c *gin.Context) {
 	httpStatus, response := m.RedirectUtil.GoogleRegister()
+	if httpStatus != http.StatusOK {
+		Resp(c, httpStatus, response)
+	}
 	c.Redirect(httpStatus, response.URL)
+}
+
+type ProfileControllerImpl struct {
+	MemberUtil port.MemberUtil
+}
+
+func (m *ProfileControllerImpl) GetProfile(c *gin.Context) {
+	// token := c.GetHeader("Authorization")
+	// code, resp := m.MemberUtil.GetProfile(token)
+	// if code != 200 {
+	// 	c.AbortWithStatusJSON(code, resp)
+	// 	return
+	// }
 }

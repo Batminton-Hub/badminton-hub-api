@@ -16,10 +16,7 @@ func HashAuth(rawHash, key string) string {
 
 func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (string, error) {
 	var token string
-	config, err := util.LoadConfig()
-	if err != nil {
-		return token, fmt.Errorf("failed to load config: %w", err)
-	}
+	config := util.LoadConfig()
 
 	lt := time.Duration(5 * time.Minute)
 	exp := time.Now().Add(lt).Unix()
@@ -63,10 +60,7 @@ func ValidateBearerToken(encryption port.Encryption, token string) (domain.AuthB
 }
 
 func RandomGoogleState() (string, error) {
-	config, err := util.LoadConfig()
-	if err != nil {
-		return "", fmt.Errorf("failed to load config: %w", err)
-	}
+	config := util.LoadConfig()
 
 	if config.Mode == "DEVERLOP" {
 		return config.DefaultGoogleState, nil

@@ -1,6 +1,11 @@
 package util
 
-import "math/rand"
+import (
+	"math/rand"
+	"strings"
+
+	"github.com/google/uuid"
+)
 
 func RandomString(length int, alpha, numeric, symbol bool) string {
 	const alphaSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -25,4 +30,13 @@ func RandomString(length int, alpha, numeric, symbol bool) string {
 		state[i] = charset[rand.Intn(len(charset))]
 	}
 	return string(state)
+}
+
+func GenerateUUID() string {
+	return uuid.New().String()
+}
+
+func GenerateUUIDWithoutHyphens() string {
+	u := uuid.New()
+	return strings.ReplaceAll(u.String(), "-", "")
 }

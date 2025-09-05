@@ -21,6 +21,7 @@ type Member struct {
 	Gender       string    `json:"gender" bson:"gender"`               // Gender
 	ProfileImage string    `json:"profile_image" bson:"profile_image"` // URL to profile image
 	DateOfBirth  string    `json:"date_of_birth" bson:"date_of_birth"` // Date of birth in YYYY-MM-DD format
+	TypeMember   string    `json:"type_member" bson:"type_member"`     // Type member
 	Region       string    `json:"region" bson:"region"`               // Region or country
 	Permission   []string  `json:"permission" bson:"permission"`       // Permission
 	GoogleID     string    `json:"google_id" bson:"google_id"`         // Google ID
@@ -103,4 +104,10 @@ type GoogleUserInfo struct {
 	Name          string `json:"name"`
 	Picture       string `json:"picture"`
 	VerifiedEmail bool   `json:"verified_email"`
+}
+
+type ResponseGetProfile struct {
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Member  Member `json:"member,omitempty"`
 }

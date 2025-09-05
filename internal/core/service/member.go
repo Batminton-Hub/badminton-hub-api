@@ -13,9 +13,20 @@ import (
 )
 
 const (
-	register = "REGISTER"
-	login    = "LOGIN"
-	google   = "GOOGLE"
+	REGISTER = "REGISTER"
+	LOGIN    = "LOGIN"
+
+	// Platform
+	GOOGLE = "GOOGLE"
+
+	// Status
+	PENDING = "PENDING"
+	ACTIVE  = "ACTIVE"
+	BANNED  = "BANNED"
+	DELETED = "DELETED"
+
+	// Type Member
+	MEMBER = "MEMBER"
 )
 
 type MemberUtil struct {
@@ -36,23 +47,20 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 	defer cancel()
 
 	response := domain.ResponseRegisterMember{}
-	config, err := util.LoadConfig()
-	if err != nil {
-		response.Code = domain.ErrLoadConfig.Code
-		response.Message = domain.ErrLoadConfig.Msg
-		return http.StatusInternalServerError, response // 500 Internal Server Error for config load fail
-	}
+	config := util.LoadConfig()
 
 	createAt := time.Now()
 	updateAt := time.Now()
 	memberBody := domain.Member{
-		UserID:    core_util.GenUserID(registerForm.Email, registerForm.Password),
-		Email:     registerForm.Email,
-		Password:  core_util.HashPassword(registerForm.Password, config.KeyHashPassword),
-		Gender:    registerForm.Gender,
-		Hash:      core_util.GenerateHash(config.KeyHashMember),
-		CreatedAt: createAt,
-		UpdatedAt: updateAt,
+		UserID:     core_util.GenUserID(registerForm.Email, registerForm.Password),
+		Email:      registerForm.Email,
+		Password:   core_util.HashPassword(registerForm.Password, config.KeyHashPassword),
+		Gender:     registerForm.Gender,
+		Hash:       core_util.GenerateHash(config.KeyHashMember),
+		Status:     ACTIVE,
+		TypeMember: MEMBER,
+		CreatedAt:  createAt,
+		UpdatedAt:  updateAt,
 	}
 
 	if err := m.memberRepo.RegisterMember(ctx, memberBody); err != nil {
@@ -72,15 +80,16 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
+	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryption())
 	if err != nil {
 		response.Code = domain.ErrGenerateToken.Code
 		response.Message = domain.ErrGenerateToken.Msg
 		return http.StatusInternalServerError, response
 	}
 
+	response.Code = domain.RegisterSuccess.Code
+	response.Message = domain.RegisterSuccess.Msg
 	response.BearerToken = token
-	response.Message = "Success"
 	return http.StatusCreated, response // 201 Created for successful registration
 }
 
@@ -89,12 +98,7 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	config, err := util.LoadConfig()
-	if err != nil {
-		response.Code = domain.ErrLoadConfig.Code
-		response.Message = domain.ErrLoadConfig.Msg
-		return http.StatusInternalServerError, response
-	}
+	config := util.LoadConfig()
 
 	memberBody, err := m.memberRepo.FindEmailMember(ctx, loginForm.Email)
 	if err != nil {
@@ -117,15 +121,16 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 		UserID:   memberBody.UserID,
 	}
 
-	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
+	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryption())
 	if err != nil {
 		response.Code = domain.ErrGenerateToken.Code
 		response.Message = domain.ErrGenerateToken.Msg
 		return http.StatusInternalServerError, response
 	}
 
+	response.Code = domain.LoginSuccess.Code
+	response.Message = domain.LoginSuccess.Msg
 	response.BearerToken = token
-	response.Message = "Success"
 	return http.StatusOK, response
 }
 
@@ -141,22 +146,19 @@ func (m *MemberUtil) GoogleRegister(responseGoogle any) (int, domain.ResponseReg
 		return http.StatusUnauthorized, response
 	}
 
-	config, err := util.LoadConfig()
-	if err != nil {
-		response.Code = domain.ErrLoadConfig.Code
-		response.Message = domain.ErrLoadConfig.Msg
-		return 500, response
-	}
+	config := util.LoadConfig()
 
 	createAt := time.Now()
 	updateAt := time.Now()
-	password := util.Sha256(info.UserInfo.ID + google)
+	password := util.Sha256(info.UserInfo.ID + GOOGLE)
 	memberBody := domain.Member{
 		UserID:       core_util.GenUserID(info.UserInfo.Email, password),
 		Email:        info.UserInfo.Email,
 		Hash:         core_util.GenerateHash(config.KeyHashMember),
 		DisplayName:  info.UserInfo.Name,
 		ProfileImage: info.UserInfo.Picture,
+		Status:       PENDING,
+		TypeMember:   MEMBER,
 		GoogleID:     info.UserInfo.ID,
 		CreatedAt:    createAt,
 		UpdatedAt:    updateAt,
@@ -173,15 +175,16 @@ func (m *MemberUtil) GoogleRegister(responseGoogle any) (int, domain.ResponseReg
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
+	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryption())
 	if err != nil {
 		response.Code = domain.ErrGenerateToken.Code
 		response.Message = domain.ErrGenerateToken.Msg
 		return 500, response
 	}
 
+	response.Code = domain.RegisterSuccess.Code
+	response.Message = domain.RegisterSuccess.Msg
 	response.BearerToken = token
-	response.Message = "Success"
 	return 200, response
 }
 
@@ -213,15 +216,21 @@ func (m *MemberUtil) GoogleLogin(responseGoogle any) (int, domain.ResponseLogin)
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryptetion())
+	token, err := core_util.GenBearerToken(hashAuth, m.middlewareUtil.Encryption())
 	if err != nil {
 		response.Code = domain.ErrGenerateToken.Code
 		response.Message = domain.ErrGenerateToken.Msg
 		return http.StatusInternalServerError, response
 	}
 
+	response.Code = domain.LoginSuccess.Code
+	response.Message = domain.LoginSuccess.Msg
 	response.BearerToken = token
-	response.Message = "Success"
+	return http.StatusOK, response
+}
+
+func (m *MemberUtil) GetProfile() (int, domain.ResponseGetProfile) {
+	response := domain.ResponseGetProfile{}
 	return http.StatusOK, response
 }
 
@@ -238,7 +247,7 @@ func NewRedirectUtil(cache port.Cache) *RedirectUtil {
 
 func (m *RedirectUtil) GoogleLogin() (int, domain.ResponseRedirectGoogleLogin) {
 	response := domain.ResponseRedirectGoogleLogin{}
-	googleConfig, err := util.GoogleConfig(login)
+	googleConfig, err := util.GoogleConfig(LOGIN)
 	if err != nil {
 		response.Code = domain.ErrLoadConfig.Code
 		response.Message = domain.ErrLoadConfig.Msg
@@ -258,6 +267,8 @@ func (m *RedirectUtil) GoogleLogin() (int, domain.ResponseRedirectGoogleLogin) {
 		return http.StatusInternalServerError, response
 	}
 
+	response.Code = domain.Success.Code
+	response.Message = domain.Success.Msg
 	response.URL = googleConfig.Config.AuthCodeURL(
 		googleConfig.State,
 		oauth2.AccessTypeOffline,
@@ -268,7 +279,7 @@ func (m *RedirectUtil) GoogleLogin() (int, domain.ResponseRedirectGoogleLogin) {
 
 func (m *RedirectUtil) GoogleRegister() (int, domain.ResponseRedirectGoogleRegister) {
 	response := domain.ResponseRedirectGoogleRegister{}
-	googleConfig, err := util.GoogleConfig(register)
+	googleConfig, err := util.GoogleConfig(REGISTER)
 	if err != nil {
 		response.Code = domain.ErrLoadConfig.Code
 		response.Message = domain.ErrLoadConfig.Msg
@@ -288,6 +299,8 @@ func (m *RedirectUtil) GoogleRegister() (int, domain.ResponseRedirectGoogleRegis
 		return http.StatusInternalServerError, response
 	}
 
+	response.Code = domain.Success.Code
+	response.Message = domain.Success.Msg
 	response.URL = googleConfig.Config.AuthCodeURL(
 		googleConfig.State,
 		oauth2.AccessTypeOffline,

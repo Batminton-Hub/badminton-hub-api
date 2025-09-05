@@ -30,7 +30,7 @@ type InternalConfig struct {
 	RedisCacheDB       int
 
 	// RandomFunc
-	DefaultAESIV       string // 16 bytes
+	DefaultAESIV       []byte // 16 bytes
 	DefaultGoogleState string
 }
 

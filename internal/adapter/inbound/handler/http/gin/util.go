@@ -1,7 +1,13 @@
 package gin
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
-func RespError(c *gin.Context, status int, message string) {
-	c.JSON(status, gin.H{"error": message})
+func Resp(c *gin.Context, httpStaus int, response any) {
+	c.JSON(httpStaus, response)
+}
+
+func RespAuth(c *gin.Context, httpStaus int, response any) {
+	c.AbortWithStatusJSON(httpStaus, response)
 }

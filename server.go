@@ -6,17 +6,18 @@ import (
 	mongodb "Badminton-Hub/internal/adapter/outbound/database/mongoDB"
 	"Badminton-Hub/internal/core/service"
 	"Badminton-Hub/util"
+	"log"
 )
 
 func StartServer() {
 	defer util.ShutdownServer()
 
 	// Load configuration
-	util.SetConfig()
-	config, err := util.LoadConfig()
+	err := util.SetConfig()
 	if err != nil {
-		panic("Failed to load configuration: " + err.Error())
+		log.Fatalln("Failed to load configuration: " + err.Error())
 	}
+	config := util.LoadConfig()
 
 	// Initialize MongoDB
 	db := mongodb.NewMongoDB(config.DBName)

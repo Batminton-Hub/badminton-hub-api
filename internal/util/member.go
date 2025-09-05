@@ -12,6 +12,7 @@ func GenerateHash(key string) string {
 	hash := util.Sha256(data)
 	return hash
 }
+
 func HashPassword(password, key string) string {
 	data := fmt.Sprint(password, key)
 	newPassword := util.Sha256(data)
@@ -19,5 +20,5 @@ func HashPassword(password, key string) string {
 }
 
 func GenUserID(email, password string) string {
-	return util.Sha256(email + password)
+	return util.GenerateUUID()
 }

@@ -40,3 +40,7 @@ type RedirectController interface {
 	GoogleLogin(c *gin.Context)
 	GoogleRegister(c *gin.Context)
 }
+
+type ProfileController interface {
+	GetProfile(c *gin.Context)
+}

@@ -17,7 +17,7 @@ type MiddlewareUtil struct {
 	cache      port.Cache
 }
 
-func (m *MiddlewareUtil) Encryptetion() port.Encryption { return m.encryption }
+func (m *MiddlewareUtil) Encryption() port.Encryption { return m.encryption }
 
 func NewMiddlewareUtil(encryption port.Encryption, cache port.Cache) *MiddlewareUtil {
 	return &MiddlewareUtil{
@@ -28,12 +28,7 @@ func NewMiddlewareUtil(encryption port.Encryption, cache port.Cache) *Middleware
 
 func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	response := domain.AuthResponse{}
-	config, err := util.LoadConfig()
-	if err != nil {
-		response.Code = domain.ErrLoadConfig.Code
-		response.Message = domain.ErrLoadConfig.Msg
-		return 500, response
-	}
+	config := util.LoadConfig()
 
 	// Remove "Bearer " prefix
 	token = token[len("Bearer "):]
@@ -43,30 +38,32 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	if err != nil {
 		response.Code = domain.ErrValidateToken.Code
 		response.Message = domain.ErrValidateToken.Msg
-		return 401, response
+		return http.StatusUnauthorized, response
 	}
 
 	// ตรวจสอบความถูกต้องของ token
 	byteAuth, err := util.EncryptGOB(authBody)
 	if err != nil {
-		return 401, response
+		return http.StatusUnauthorized, response
 	}
 	rawHash := string(byteAuth)
 	hashauth := core_util.HashAuth(rawHash, config.KeyHashAuth)
 	if authBody.Data.HashAuth != hashauth {
 		response.Code = domain.ErrValidateHashAuth.Code
 		response.Message = domain.ErrValidateHashAuth.Msg
-		return 401, response
+		return http.StatusUnauthorized, response
 	}
 
 	// ตรวจสอบว่า token ยังไม่หมดอายุ
 	if authBody.Exp < time.Now().Unix() {
 		response.Code = domain.ErrTokenExpired.Code
 		response.Message = domain.ErrTokenExpired.Msg
-		return 401, response
+		return http.StatusUnauthorized, response
 	}
 
-	return 200, response
+	response.Code = domain.AuthSuccess.Code
+	response.Message = domain.AuthSuccess.Msg
+	return http.StatusOK, response
 }
 
 func (m *MiddlewareUtil) GoogleLoginCallback(state, code string) (int, domain.ResponseGoogleLoginCallback) {
@@ -75,7 +72,7 @@ func (m *MiddlewareUtil) GoogleLoginCallback(state, code string) (int, domain.Re
 	defer cancel()
 
 	response := domain.ResponseGoogleLoginCallback{}
-	googleConfig, err := util.GoogleConfig(login)
+	googleConfig, err := util.GoogleConfig(LOGIN)
 	if err != nil {
 		response.Code = domain.ErrLoadConfig.Code
 		response.Message = domain.ErrLoadConfig.Msg
@@ -119,6 +116,8 @@ func (m *MiddlewareUtil) GoogleLoginCallback(state, code string) (int, domain.Re
 	response.UserInfo = userInfo
 	response.AccessToken = token.AccessToken
 	response.RefreshToken = token.RefreshToken
+	response.Code = domain.AuthSuccess.Code
+	response.Message = domain.AuthSuccess.Msg
 	return http.StatusOK, response
 }
 
@@ -127,7 +126,7 @@ func (m *MiddlewareUtil) GoogleRegisterCallback(state, code string) (int, domain
 	defer cancel()
 
 	response := domain.ResponseGoogleRegisterCallback{}
-	googleConfig, err := util.GoogleConfig(register)
+	googleConfig, err := util.GoogleConfig(REGISTER)
 	if err != nil {
 		response.Code = domain.ErrLoadConfig.Code
 		response.Message = domain.ErrLoadConfig.Msg
@@ -171,5 +170,7 @@ func (m *MiddlewareUtil) GoogleRegisterCallback(state, code string) (int, domain
 	response.UserInfo = userInfo
 	response.AccessToken = token.AccessToken
 	response.RefreshToken = token.RefreshToken
+	response.Code = domain.AuthSuccess.Code
+	response.Message = domain.AuthSuccess.Msg
 	return http.StatusOK, response
 }

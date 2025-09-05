@@ -30,11 +30,17 @@ func successNew(code int, msg string) SuccessResp {
 
 var (
 	//////////////////////// Success Code ////////////////////////
-	Success = successNew(0, "Success")
+	Success         = successNew(0, "Success")
+	RegisterSuccess = successNew(0, "Success")
+	LoginSuccess    = successNew(0, "Success")
+	AuthSuccess     = successNew(0, "Success")
 
 	//////////////////////// Error Code ////////////////////////
 	// Config
 	ErrLoadConfig = errorNew(1000, "Failed to load config")
+
+	// Request
+	ErrInvalidInput = errorNew(1001, "Invalid input")
 
 	// Member
 	ErrMemberRegisterFailDuplicateEmail = errorNew(2000, "Register member failed: duplicate email")
