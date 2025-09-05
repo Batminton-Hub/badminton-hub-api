@@ -10,11 +10,16 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+)
+
+const (
+	FIELD_BODY = "body"
 )
 
 // One way Encryption
@@ -124,8 +129,8 @@ func AESDecrypt(encryptData string, key string, body any) error {
 
 func JWTEncrypt(body any, key string, lt time.Duration) (string, error) {
 	claims := jwt.MapClaims{
-		"body": body,
-		"exp":  time.Now().Add(lt).Unix(),
+		FIELD_BODY: body,
+		"exp":      time.Now().Add(lt).Unix(),
 	}
 	tokenJWT := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
@@ -138,9 +143,10 @@ func JWTEncrypt(body any, key string, lt time.Duration) (string, error) {
 func JWTDecrypt(encryptData string, key string, body any) error {
 	var tokenJWT *jwt.Token
 	var err error
-	tokenJWT, err = jwt.Parse(encryptData, func(token *jwt.Token) (interface{}, error) {
-		return key, nil
-	})
+	var jwtKey = func(token *jwt.Token) (any, error) {
+		return []byte(key), nil
+	}
+	tokenJWT, err = jwt.Parse(encryptData, jwtKey)
 	if err != nil {
 		return err
 	}
@@ -153,9 +159,9 @@ func JWTDecrypt(encryptData string, key string, body any) error {
 		return fmt.Errorf("token has expired")
 	}
 
-	rawBody := tokenJWT.Claims.(jwt.MapClaims)["body"]
-	if byteBody, err := EncryptGOB(rawBody); err == nil {
-		if err := DecryptGOB(byteBody, body); err != nil {
+	rawBody := tokenJWT.Claims.(jwt.MapClaims)[FIELD_BODY]
+	if byteBody, err := json.Marshal(rawBody); err == nil {
+		if err := json.Unmarshal(byteBody, body); err != nil {
 			return err
 		}
 	} else {

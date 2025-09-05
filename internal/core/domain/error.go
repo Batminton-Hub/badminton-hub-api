@@ -48,6 +48,7 @@ var (
 	ErrMemberEmailNotFound              = errorNew(2002, "Email not found")
 	ErrCreateMemberFail                 = errorNew(2003, "Failed to create member")
 	ErrLoginHashPassword                = errorNew(2004, "Failed to hash password")
+	ErrGetMember                        = errorNew(2005, "Failed to get member")
 
 	// OAuth
 	ErrInvalidOAuthState    = errorNew(3000, "Invalid OAuth state")
@@ -62,3 +63,12 @@ var (
 	ErrValidateHashAuth = errorNew(4002, "Failed to validate hash auth")
 	ErrTokenExpired     = errorNew(4003, "Token has expired")
 )
+
+type ResponseError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type Response struct {
+	Code int `json:"code"`
+}

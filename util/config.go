@@ -3,8 +3,11 @@ package util
 import (
 	"Badminton-Hub/internal/core/domain"
 	"fmt"
+	"log"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
@@ -14,41 +17,70 @@ import (
 var googleOAuth = &domain.GoogleOAuth{}
 var config = &domain.InternalConfig{}
 
+const (
+	MODE                 = "MODE"
+	SERVER_PORT          = "SERVER_PORT"
+	DB_NAME              = "DB_NAME"
+	MONGO_DB_URL         = "MONGO_DB_URL"
+	KEY_BEARER_TOKEN     = "KEY_BEARER_TOKEN"
+	KEY_HASH_AUTH        = "KEY_HASH_AUTH"
+	KEY_HASH_MEMBER      = "KEY_HASH_MEMBER"
+	KEY_HASH_PASSWORD    = "KEY_HASH_PASSWORD"
+	GOOGLE_LOGIN_URL     = "GOOGLE_LOGIN_URL"
+	GOOGLE_REGISTER_URL  = "GOOGLE_REGISTER_URL"
+	GOOGLE_CLIENT_ID     = "GOOGLE_CLIENT_ID"
+	GOOGLE_CLIENT_SECRET = "GOOGLE_CLIENT_SECRET"
+	REDIS_CACHE_ADDR     = "REDIS_CACHE_ADDR"
+	REDIS_CACHE_PASSWORD = "REDIS_CACHE_PASSWORD"
+	REDIS_CACHE_DB       = "REDIS_CACHE_DB"
+	DEFAULT_AES_IV       = "DEFAULT_AES_IV"
+	DEFAULT_GOOGLE_STATE = "DEFAULT_GOOGLE_STATE"
+	BEARER_TOKEN_EXP     = "BEAR_TOKEN_EXP"
+)
+
 // Server Config
 func SetConfig() error {
 	godotenv.Load()
 
 	config = &domain.InternalConfig{
 		// Mode
-		Mode: getEnv("Mode", "DEVERLOP"), // DEVERLOP, UAT , PRODUCTION
+		Mode: getEnv(MODE, "DEVERLOP"), // DEVERLOP, UAT , PRODUCTION
 
 		// Server
-		ServerPort: getEnv("Server_Port", "8080"),
+		ServerPort: getEnv(SERVER_PORT, "8080"),
 
 		// Mongo
-		DBName:     getEnv("DB_Name", "default_db_name"),
-		MongoDBURL: getEnv("MongoDB_URL", "mongodb://localhost:27017"),
+		DBName:     getEnv(DB_NAME, "default_db_name"),
+		MongoDBURL: getEnv(MONGO_DB_URL, "mongodb://localhost:27017"),
 
 		// Key
-		KeyHashAuth:     getEnv("Key_Hash_Auth", "default_hash_key"),
-		KeyHashMember:   getEnv("Key_Hash_Member", "default_hash_key"),
-		KeyHashPassword: getEnv("Key_Hash_Password", "default_hash_key"),
+		KeyBearerToken:  getEnv(KEY_BEARER_TOKEN, "0123456789ABCDEF"),
+		KeyHashAuth:     getEnv(KEY_HASH_AUTH, "default_hash_key"),
+		KeyHashMember:   getEnv(KEY_HASH_MEMBER, "default_hash_key"),
+		KeyHashPassword: getEnv(KEY_HASH_PASSWORD, "default_hash_key"),
 
 		// Google OAuth
-		GoogleLoginRedirectURL:    getEnv("Google_Login_URL", "http://localhost:8080/member/auth/google/callback/login"),
-		GoogleRegisterRedirectURL: getEnv("Google_Register_URL", "http://localhost:8080/member/auth/google/callback/register"),
-		GoogleClinentID:           getEnv("Google_Client_ID", "1030829763252-hngbodu9d2vqu2c82n80f86gl8urtq5n.apps.googleusercontent.com"),
-		GoogleClientSecret:        getEnv("Google_Client_Secret", "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"),
+		GoogleLoginRedirectURL:    getEnv(GOOGLE_LOGIN_URL, "http://localhost:8080/member/auth/google/callback/login"),
+		GoogleRegisterRedirectURL: getEnv(GOOGLE_REGISTER_URL, "http://localhost:8080/member/auth/google/callback/register"),
+		GoogleClinentID:           getEnv(GOOGLE_CLIENT_ID, "1030829763252-hngbodu9d2vqu2c82n80f86gl8urtq5n.apps.googleusercontent.com"),
+		GoogleClientSecret:        getEnv(GOOGLE_CLIENT_SECRET, "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"),
 
 		// Redis Cache
-		RedisCacheAddr:     getEnv("Redis_Cache_Addr", "localhost:6379"),
-		RedisCachePassword: getEnv("Redis_Cache_Password", ""),
-		RedisCacheDB:       getEnv("Redis_Cache_DB", 0),
+		RedisCacheAddr:     getEnv(REDIS_CACHE_ADDR, "localhost:6379"),
+		RedisCachePassword: getEnv(REDIS_CACHE_PASSWORD, ""),
+		RedisCacheDB:       getEnv(REDIS_CACHE_DB, 0),
 
 		// RandomFunc
-		DefaultAESIV:       getEnv("Default_AES_IV", []byte("0123456789ABCDEF")), // 16 bytes
-		DefaultGoogleState: getEnv("Default_Google_State", "0123456789ABCDEF"),
+		DefaultAESIV:       getEnv(DEFAULT_AES_IV, []byte("0123456789ABCDEF")), // 16 bytes
+		DefaultGoogleState: getEnv(DEFAULT_GOOGLE_STATE, "0123456789ABCDEF"),
+
+		// Token
+		BearerTokenExp: getEnv(BEARER_TOKEN_EXP, 5*time.Minute),
 	}
+
+	fmt.Println("config.TokenExpired ", config.BearerTokenExp)
+	fmt.Println("config.DefaultAESIV ", config.DefaultAESIV)
+	fmt.Println("config.RedisCacheDB ", config.RedisCacheDB)
 
 	return nil
 }
@@ -80,20 +112,75 @@ func GoogleConfig(typeRedirect string) (*domain.GoogleOAuth, error) {
 		},
 		Endpoint: google.Endpoint,
 	}
-	// googleOAuth.State = "randomstate"
 	return googleOAuth, nil
 }
 
 // Other Function
+type TypeEnv interface {
+	string | []byte | int | time.Duration
+}
+
 func getEnv[T any](keyEnv string, defaultVal T) T {
 	value := os.Getenv(keyEnv)
-	// if value != "" {
-	// 	return value
-	// } else {
-	// 	return defaultVal
-	// }
 	if value != "" {
-		return any(value).(T)
+		switch any(defaultVal).(type) {
+		case string:
+			return any(value).(T)
+		case []byte:
+			return any([]byte(value)).(T)
+		case int:
+			num, err := strconv.Atoi(value)
+			if err != nil {
+				log.Fatalf("Setting env key[%s] error : %s", keyEnv, err.Error())
+			}
+			return any(num).(T)
+		case time.Duration:
+			num, err := strconv.Atoi(value)
+			if err != nil {
+				log.Fatalf("Setting env key[%s] error : %s", keyEnv, err.Error())
+			}
+			return any(time.Duration(num) * time.Minute).(T)
+		}
 	}
 	return defaultVal
 }
+
+// func getEnvStr(keyEnv string, defaultVal string) string {
+// 	value := os.Getenv(keyEnv)
+// 	if value != "" {
+// 		return value
+// 	}
+// 	return defaultVal
+// }
+
+// func getEnvInt(keyEnv string, defaultVal int) int {
+// 	value := os.Getenv(keyEnv)
+// 	if value != "" {
+// 		num, err := strconv.Atoi(value)
+// 		if err != nil {
+// 			log.Fatalln("Failed to convert string to int: " + err.Error())
+// 		}
+// 		return num
+// 	}
+// 	return defaultVal
+// }
+
+// func getEnvByt(keyEnv string, defaultVal []byte) []byte {
+// 	value := os.Getenv(keyEnv)
+// 	if value != "" {
+// 		return []byte(value)
+// 	}
+// 	return defaultVal
+// }
+
+// func getEnvDur(keyEnv string, defaultVal time.Duration) time.Duration {
+// 	value := os.Getenv(keyEnv)
+// 	if value != "" {
+// 		num, err := strconv.Atoi(value)
+// 		if err != nil {
+// 			log.Fatalln("Failed to convert string to int: " + err.Error())
+// 		}
+// 		return time.Duration(num) * time.Minute
+// 	}
+// 	return defaultVal
+// }

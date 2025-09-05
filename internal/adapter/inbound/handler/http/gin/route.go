@@ -17,6 +17,8 @@ func (m *MainRoute) RouteMember() {
 		member.GET("/google/register", m.RedirectController.GoogleRegister)
 		member.GET("/auth/google/callback/login", m.MiddlewareController.GoogleLoginCallback, m.MemberController.Login)
 		member.GET("/auth/google/callback/register", m.MiddlewareController.GoogleRegisterCallback, m.MemberController.RegisterMember)
+
+		member.GET("/profile", m.MiddlewareController.Authenticate, m.MemberController.GetProfile)
 	}
 }
 

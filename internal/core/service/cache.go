@@ -2,6 +2,7 @@ package service
 
 import (
 	"Badminton-Hub/internal/core/port"
+	"context"
 	"time"
 )
 
@@ -15,14 +16,14 @@ func NewCacheUtil(cache port.Cache) *CacheUtil {
 	}
 }
 
-func (c *CacheUtil) GetGoogleState(key string) (bool, error) {
-	return c.cache.GetGoogleState(key)
+func (c *CacheUtil) GetGoogleState(ctx context.Context, key string) (bool, error) {
+	return c.cache.GetGoogleState(ctx, key)
 }
 
-func (c *CacheUtil) SetGoogleState(key string, lt time.Duration) error {
-	return c.cache.SetGoogleState(key, lt)
+func (c *CacheUtil) SetGoogleState(ctx context.Context, key string, lt time.Duration) error {
+	return c.cache.SetGoogleState(ctx, key, lt)
 }
 
-func (c *CacheUtil) DelGoogleState(key string) error {
-	return c.cache.DelGoogleState(key)
+func (c *CacheUtil) DelGoogleState(ctx context.Context, key string) error {
+	return c.cache.DelGoogleState(ctx, key)
 }

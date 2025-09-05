@@ -15,11 +15,13 @@ type MiddlewareControllerImpl struct {
 
 func (m *MiddlewareControllerImpl) Authenticate(c *gin.Context) {
 	token := c.GetHeader("Authorization")
-	httpCode, response := m.MiddlewareUtil.Authenticate(token)
-	if httpCode != http.StatusOK {
-		RespAuth(c, httpCode, response)
+	httpStatus, response := m.MiddlewareUtil.Authenticate(token)
+	if httpStatus != http.StatusOK {
+		RespAuth(c, httpStatus, response.Code, response.Message)
 		return
 	}
+
+	c.Set("user_id", response.AuthBody.Data.UserID)
 
 	c.Next()
 }
@@ -30,7 +32,7 @@ func (m *MiddlewareControllerImpl) GoogleLoginCallback(c *gin.Context) {
 
 	httpStatus, response := m.MiddlewareUtil.GoogleLoginCallback(state, code)
 	if httpStatus != http.StatusOK {
-		RespAuth(c, httpStatus, response)
+		RespAuth(c, httpStatus, response.Code, response.Message)
 		return
 	}
 
@@ -46,7 +48,7 @@ func (m *MiddlewareControllerImpl) GoogleRegisterCallback(c *gin.Context) {
 
 	httpStatus, response := m.MiddlewareUtil.GoogleRegisterCallback(state, code)
 	if httpStatus != http.StatusOK {
-		RespAuth(c, httpStatus, response)
+		RespAuth(c, httpStatus, response.Code, response.Message)
 		return
 	}
 

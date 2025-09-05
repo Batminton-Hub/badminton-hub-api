@@ -5,7 +5,6 @@ import (
 	"Badminton-Hub/internal/core/port"
 	core_util "Badminton-Hub/internal/util"
 	"Badminton-Hub/util"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -34,19 +33,26 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	token = token[len("Bearer "):]
 
 	// ถอด authentication token ที่ส่งมาจาก client
-	authBody, err := core_util.ValidateBearerToken(m.encryption, token)
+	authBody, err := core_util.ValidateBearerToken(token, m.encryption)
 	if err != nil {
+		fmt.Println("Authenticate err : ", err)
 		response.Code = domain.ErrValidateToken.Code
 		response.Message = domain.ErrValidateToken.Msg
 		return http.StatusUnauthorized, response
 	}
 
+	response.AuthBody = authBody
+
 	// ตรวจสอบความถูกต้องของ token
-	byteAuth, err := util.EncryptGOB(authBody)
+	hashAuthBody := domain.HashAuth{
+		CreateAt: authBody.Data.CreatedAt,
+		UserID:   authBody.Data.UserID,
+	}
+	byteHash, err := util.EncryptGOB(hashAuthBody)
 	if err != nil {
 		return http.StatusUnauthorized, response
 	}
-	rawHash := string(byteAuth)
+	rawHash := string(byteHash)
 	hashauth := core_util.HashAuth(rawHash, config.KeyHashAuth)
 	if authBody.Data.HashAuth != hashauth {
 		response.Code = domain.ErrValidateHashAuth.Code
@@ -68,7 +74,7 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 
 func (m *MiddlewareUtil) GoogleLoginCallback(state, code string) (int, domain.ResponseGoogleLoginCallback) {
 	fmt.Println("GoogleLoginCallback Start")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := util.InitConText(10 * time.Second)
 	defer cancel()
 
 	response := domain.ResponseGoogleLoginCallback{}
@@ -82,12 +88,12 @@ func (m *MiddlewareUtil) GoogleLoginCallback(state, code string) (int, domain.Re
 	googleOAuthConfig := googleConfig.Config
 
 	// check and delete state
-	if ok, err := m.cache.GetGoogleState(state); err != nil || !ok {
+	if ok, err := m.cache.GetGoogleState(ctx, state); err != nil || !ok {
 		response.Code = domain.ErrInvalidOAuthState.Code
 		response.Message = domain.ErrInvalidOAuthState.Msg
 		return http.StatusUnauthorized, response
 	}
-	m.cache.DelGoogleState(state)
+	m.cache.DelGoogleState(ctx, state)
 
 	token, err := googleOAuthConfig.Exchange(ctx, code)
 	if err != nil {
@@ -122,7 +128,7 @@ func (m *MiddlewareUtil) GoogleLoginCallback(state, code string) (int, domain.Re
 }
 
 func (m *MiddlewareUtil) GoogleRegisterCallback(state, code string) (int, domain.ResponseGoogleRegisterCallback) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := util.InitConText(10 * time.Second)
 	defer cancel()
 
 	response := domain.ResponseGoogleRegisterCallback{}
@@ -136,12 +142,12 @@ func (m *MiddlewareUtil) GoogleRegisterCallback(state, code string) (int, domain
 	googleOAuthConfig := googleConfig.Config
 
 	// check and delete state
-	if ok, err := m.cache.GetGoogleState(state); err != nil || !ok {
+	if ok, err := m.cache.GetGoogleState(ctx, state); err != nil || !ok {
 		response.Code = domain.ErrInvalidOAuthState.Code
 		response.Message = domain.ErrInvalidOAuthState.Msg
 		return http.StatusUnauthorized, response
 	}
-	m.cache.DelGoogleState(state)
+	m.cache.DelGoogleState(ctx, state)
 
 	token, err := googleOAuthConfig.Exchange(ctx, code)
 	if err != nil {

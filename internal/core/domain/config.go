@@ -1,6 +1,10 @@
 package domain
 
-import "golang.org/x/oauth2"
+import (
+	"time"
+
+	"golang.org/x/oauth2"
+)
 
 type InternalConfig struct {
 	// Mode
@@ -14,6 +18,7 @@ type InternalConfig struct {
 	MongoDBURL string
 
 	// Key
+	KeyBearerToken  string
 	KeyHashAuth     string
 	KeyHashMember   string
 	KeyHashPassword string
@@ -32,6 +37,9 @@ type InternalConfig struct {
 	// RandomFunc
 	DefaultAESIV       []byte // 16 bytes
 	DefaultGoogleState string
+
+	// Token
+	BearerTokenExp time.Duration
 }
 
 type GoogleOAuth struct {

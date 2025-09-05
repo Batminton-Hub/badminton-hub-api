@@ -5,7 +5,7 @@ import (
 	"Badminton-Hub/internal/core/port"
 	core_util "Badminton-Hub/internal/util"
 	"Badminton-Hub/util"
-	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -43,7 +43,7 @@ func NewMemberUtil(memberRepo port.MemberRepo, middlewareUtil port.MiddlewareUti
 }
 
 func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 
 	response := domain.ResponseRegisterMember{}
@@ -63,20 +63,23 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 		UpdatedAt:  updateAt,
 	}
 
-	if err := m.memberRepo.RegisterMember(ctx, memberBody); err != nil {
-		if domain.ErrMemberRegisterFailDuplicateHash.Err == err {
+	if err := m.memberRepo.SaveMember(ctx, memberBody); err != nil {
+		switch err {
+		case domain.ErrMemberRegisterFailDuplicateEmail.Err:
+			response.Code = domain.ErrMemberRegisterFailDuplicateEmail.Code
+			response.Message = domain.ErrMemberRegisterFailDuplicateEmail.Msg
+		case domain.ErrMemberRegisterFailDuplicateHash.Err:
 			response.Code = domain.ErrMemberRegisterFailDuplicateHash.Code
 			response.Message = domain.ErrMemberRegisterFailDuplicateHash.Msg
-			return http.StatusConflict, response // 409 Conflict
+		default:
+			response.Code = domain.ErrCreateMemberFail.Code
+			response.Message = domain.ErrCreateMemberFail.Msg
 		}
-		response.Code = domain.ErrCreateMemberFail.Code
-		response.Message = domain.ErrCreateMemberFail.Msg
 		return http.StatusInternalServerError, response // 500 Internal Server Error for other DB errors
 	}
 
 	// create token
 	hashAuth := domain.HashAuth{
-		Username: memberBody.Username,
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
@@ -95,7 +98,7 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 
 func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogin) {
 	response := domain.ResponseLogin{}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 
 	config := util.LoadConfig()
@@ -115,8 +118,10 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 	}
 
 	// create token
+	fmt.Println("Login")
+	fmt.Println("CreateAt : ", memberBody.CreatedAt)
+	fmt.Println("UserID : ", memberBody.UserID)
 	hashAuth := domain.HashAuth{
-		Username: memberBody.Username,
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
@@ -135,7 +140,7 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 }
 
 func (m *MemberUtil) GoogleRegister(responseGoogle any) (int, domain.ResponseRegisterMember) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 
 	response := domain.ResponseRegisterMember{}
@@ -163,15 +168,14 @@ func (m *MemberUtil) GoogleRegister(responseGoogle any) (int, domain.ResponseReg
 		CreatedAt:    createAt,
 		UpdatedAt:    updateAt,
 	}
-	if err := m.memberRepo.RegisterMember(ctx, memberBody); err != nil {
+	if err := m.memberRepo.SaveMember(ctx, memberBody); err != nil {
 		response.Code = domain.ErrCreateMemberFail.Code
 		response.Message = domain.ErrCreateMemberFail.Msg
-		return 400, response
+		return http.StatusBadRequest, response
 	}
 
 	// create token
 	hashAuth := domain.HashAuth{
-		Username: memberBody.Username,
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
@@ -179,17 +183,17 @@ func (m *MemberUtil) GoogleRegister(responseGoogle any) (int, domain.ResponseReg
 	if err != nil {
 		response.Code = domain.ErrGenerateToken.Code
 		response.Message = domain.ErrGenerateToken.Msg
-		return 500, response
+		return http.StatusInternalServerError, response
 	}
 
 	response.Code = domain.RegisterSuccess.Code
 	response.Message = domain.RegisterSuccess.Msg
 	response.BearerToken = token
-	return 200, response
+	return http.StatusCreated, response
 }
 
 func (m *MemberUtil) GoogleLogin(responseGoogle any) (int, domain.ResponseLogin) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 
 	response := domain.ResponseLogin{}
@@ -211,8 +215,8 @@ func (m *MemberUtil) GoogleLogin(responseGoogle any) (int, domain.ResponseLogin)
 	}
 
 	// create token
+
 	hashAuth := domain.HashAuth{
-		Username: memberBody.Username,
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
@@ -229,8 +233,21 @@ func (m *MemberUtil) GoogleLogin(responseGoogle any) (int, domain.ResponseLogin)
 	return http.StatusOK, response
 }
 
-func (m *MemberUtil) GetProfile() (int, domain.ResponseGetProfile) {
+func (m *MemberUtil) GetProfile(userID string) (int, domain.ResponseGetProfile) {
+	ctx, cancel := util.InitConText(2 * time.Second)
+	defer cancel()
+
 	response := domain.ResponseGetProfile{}
+	member, err := m.memberRepo.GetMemberByUserID(ctx, userID)
+	if err != nil {
+		response.Code = domain.ErrGetMember.Code
+		response.Message = domain.ErrGetMember.Msg
+		return http.StatusBadRequest, response
+	}
+
+	response.Code = domain.Success.Code
+	response.Message = domain.Success.Msg
+	response.Member = member
 	return http.StatusOK, response
 }
 
@@ -246,6 +263,9 @@ func NewRedirectUtil(cache port.Cache) *RedirectUtil {
 }
 
 func (m *RedirectUtil) GoogleLogin() (int, domain.ResponseRedirectGoogleLogin) {
+	ctx, cancel := util.InitConText(2 * time.Second)
+	defer cancel()
+
 	response := domain.ResponseRedirectGoogleLogin{}
 	googleConfig, err := util.GoogleConfig(LOGIN)
 	if err != nil {
@@ -261,7 +281,7 @@ func (m *RedirectUtil) GoogleLogin() (int, domain.ResponseRedirectGoogleLogin) {
 	}
 
 	ltState := time.Duration(5 * time.Minute)
-	if err := m.cache.SetGoogleState(googleConfig.State, ltState); err != nil {
+	if err := m.cache.SetGoogleState(ctx, googleConfig.State, ltState); err != nil {
 		response.Code = domain.ErrSetGoogleState.Code
 		response.Message = domain.ErrSetGoogleState.Msg
 		return http.StatusInternalServerError, response
@@ -278,6 +298,9 @@ func (m *RedirectUtil) GoogleLogin() (int, domain.ResponseRedirectGoogleLogin) {
 }
 
 func (m *RedirectUtil) GoogleRegister() (int, domain.ResponseRedirectGoogleRegister) {
+	ctx, cancel := util.InitConText(2 * time.Second)
+	defer cancel()
+
 	response := domain.ResponseRedirectGoogleRegister{}
 	googleConfig, err := util.GoogleConfig(REGISTER)
 	if err != nil {
@@ -293,7 +316,7 @@ func (m *RedirectUtil) GoogleRegister() (int, domain.ResponseRedirectGoogleRegis
 	}
 
 	ltState := time.Duration(5 * time.Minute)
-	if err := m.cache.SetGoogleState(googleConfig.State, ltState); err != nil {
+	if err := m.cache.SetGoogleState(ctx, googleConfig.State, ltState); err != nil {
 		response.Code = domain.ErrSetGoogleState.Code
 		response.Message = domain.ErrSetGoogleState.Msg
 		return http.StatusInternalServerError, response

@@ -7,27 +7,36 @@ import (
 )
 
 type MainRoute struct {
-	MiddlewareController MiddlewareController
-	MemberController     MemberController
-	RedirectController   RedirectController
 	Engine               *gin.Engine
+	MiddlewareController MiddlewareController
+	MemberController     MemberControllerGroup
+	RedirectController   RedirectController
 }
 
 func NewGinMainRoute(
 	middleware port.MiddlewareUtil,
-	memberUtil port.MemberUtil,
+	memberUtil port.MemberUtilGroup,
 	redirectUtil port.RedirectUtil,
 ) *MainRoute {
 	return &MainRoute{
 		MiddlewareController: &MiddlewareControllerImpl{middleware},
-		MemberController:     &MemberControllerImpl{memberUtil},
 		RedirectController:   &RedirectControllerImpl{redirectUtil},
+		MemberController:     &MemberControllerImpl{memberUtil},
 	}
+}
+
+type MemberControllerGroup interface {
+	MemberController
+	ProfileController
 }
 
 type MemberController interface {
 	RegisterMember(c *gin.Context)
 	Login(c *gin.Context)
+}
+
+type ProfileController interface {
+	GetProfile(c *gin.Context)
 }
 
 type MiddlewareController interface {
@@ -39,8 +48,4 @@ type MiddlewareController interface {
 type RedirectController interface {
 	GoogleLogin(c *gin.Context)
 	GoogleRegister(c *gin.Context)
-}
-
-type ProfileController interface {
-	GetProfile(c *gin.Context)
 }
