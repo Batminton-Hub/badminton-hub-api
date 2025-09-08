@@ -30,10 +30,11 @@ func successNew(code int, msg string) SuccessResp {
 
 var (
 	//////////////////////// Success Code ////////////////////////
-	Success         = successNew(0, "Success")
-	RegisterSuccess = successNew(0, "Success")
-	LoginSuccess    = successNew(0, "Success")
-	AuthSuccess     = successNew(0, "Success")
+	Success             = successNew(0, "Success")
+	RegisterSuccess     = successNew(0, "Success")
+	LoginSuccess        = successNew(0, "Success")
+	AuthSuccess         = successNew(0, "Success")
+	UpdateMemberSuccess = successNew(0, "Success")
 
 	//////////////////////// Error Code ////////////////////////
 	// Config
@@ -49,6 +50,7 @@ var (
 	ErrCreateMemberFail                 = errorNew(2003, "Failed to create member")
 	ErrLoginHashPassword                = errorNew(2004, "Failed to hash password")
 	ErrGetMember                        = errorNew(2005, "Failed to get member")
+	ErrUpdateMemberFail                 = errorNew(2006, "Failed to update member")
 
 	// OAuth
 	ErrInvalidOAuthState    = errorNew(3000, "Invalid OAuth state")
@@ -67,8 +69,4 @@ var (
 type ResponseError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
-}
-
-type Response struct {
-	Code int `json:"code"`
 }

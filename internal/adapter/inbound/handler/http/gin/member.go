@@ -10,7 +10,7 @@ import (
 )
 
 type MemberControllerImpl struct {
-	MemberUtil port.MemberUtilGroup
+	MemberUtil port.MemberService
 }
 
 func (m *MemberControllerImpl) RegisterMember(c *gin.Context) {
@@ -75,6 +75,24 @@ func (m *MemberControllerImpl) GetProfile(c *gin.Context) {
 	userID := c.GetString("user_id")
 	fmt.Println("userID", userID)
 	httpStatus, response := m.MemberUtil.GetProfile(userID)
+	if httpStatus != http.StatusOK {
+		RespError(c, httpStatus, response.Code, response.Message)
+		return
+	}
+
+	RespSuccess(c, httpStatus, response)
+}
+
+func (m *MemberControllerImpl) UpdateProfile(c *gin.Context) {
+	userID := c.GetString("user_id")
+	fmt.Println("userID", userID)
+	var request domain.RequestUpdateProfile
+	if err := c.ShouldBind(&request); err != nil {
+		RespError(c, http.StatusBadRequest, domain.ErrInvalidInput.Code, domain.ErrInvalidInput.Msg)
+		return
+	}
+
+	httpStatus, response := m.MemberUtil.UpdateProfile(userID, request)
 	if httpStatus != http.StatusOK {
 		RespError(c, httpStatus, response.Code, response.Message)
 		return

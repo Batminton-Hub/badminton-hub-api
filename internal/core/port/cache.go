@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Cache interface {
+type CacheUtil interface {
 	CacheGoogle
 }
 

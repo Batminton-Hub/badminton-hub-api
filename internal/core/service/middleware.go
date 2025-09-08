@@ -11,21 +11,21 @@ import (
 	"time"
 )
 
-type MiddlewareUtil struct {
-	encryption port.Encryption
-	cache      port.Cache
+type MiddlewareService struct {
+	encryption port.EncryptionUtil
+	cache      port.CacheUtil
 }
 
-func (m *MiddlewareUtil) Encryption() port.Encryption { return m.encryption }
+func (m *MiddlewareService) Encryption() port.EncryptionUtil { return m.encryption }
 
-func NewMiddlewareUtil(encryption port.Encryption, cache port.Cache) *MiddlewareUtil {
-	return &MiddlewareUtil{
+func NewMiddlewareService(encryption port.EncryptionUtil, cache port.CacheUtil) *MiddlewareService {
+	return &MiddlewareService{
 		encryption: encryption,
 		cache:      cache,
 	}
 }
 
-func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
+func (m *MiddlewareService) Authenticate(token string) (int, domain.AuthResponse) {
 	response := domain.AuthResponse{}
 	config := util.LoadConfig()
 
@@ -35,7 +35,6 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	// ถอด authentication token ที่ส่งมาจาก client
 	authBody, err := core_util.ValidateBearerToken(token, m.encryption)
 	if err != nil {
-		fmt.Println("Authenticate err : ", err)
 		response.Code = domain.ErrValidateToken.Code
 		response.Message = domain.ErrValidateToken.Msg
 		return http.StatusUnauthorized, response
@@ -72,7 +71,7 @@ func (m *MiddlewareUtil) Authenticate(token string) (int, domain.AuthResponse) {
 	return http.StatusOK, response
 }
 
-func (m *MiddlewareUtil) GoogleLoginCallback(state, code string) (int, domain.ResponseGoogleLoginCallback) {
+func (m *MiddlewareService) GoogleLoginCallback(state, code string) (int, domain.ResponseGoogleLoginCallback) {
 	fmt.Println("GoogleLoginCallback Start")
 	ctx, cancel := util.InitConText(10 * time.Second)
 	defer cancel()
@@ -127,7 +126,7 @@ func (m *MiddlewareUtil) GoogleLoginCallback(state, code string) (int, domain.Re
 	return http.StatusOK, response
 }
 
-func (m *MiddlewareUtil) GoogleRegisterCallback(state, code string) (int, domain.ResponseGoogleRegisterCallback) {
+func (m *MiddlewareService) GoogleRegisterCallback(state, code string) (int, domain.ResponseGoogleRegisterCallback) {
 	ctx, cancel := util.InitConText(10 * time.Second)
 	defer cancel()
 

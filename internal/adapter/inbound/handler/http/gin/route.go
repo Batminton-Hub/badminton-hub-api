@@ -2,7 +2,7 @@ package gin
 
 import (
 	"Badminton-Hub/util"
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +19,7 @@ func (m *MainRoute) RouteMember() {
 		member.GET("/auth/google/callback/register", m.MiddlewareController.GoogleRegisterCallback, m.MemberController.RegisterMember)
 
 		member.GET("/profile", m.MiddlewareController.Authenticate, m.MemberController.GetProfile)
+		member.PATCH("/profile", m.MiddlewareController.Authenticate, m.MemberController.UpdateProfile)
 	}
 }
 
@@ -30,7 +31,7 @@ func (m *MainRoute) Run() {
 	srv := util.HttpServer(m.Engine)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Println("Listen error:", err)
+			log.Fatal("Listen error:", err)
 		}
 	}()
 }

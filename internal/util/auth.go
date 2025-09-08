@@ -14,7 +14,7 @@ func HashAuth(rawHash, key string) string {
 	return hashAuth
 }
 
-func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (string, error) {
+func GenBearerToken(hashBody domain.HashAuth, encryption port.EncryptionUtil) (string, error) {
 	var token string
 	config := util.LoadConfig()
 
@@ -37,7 +37,6 @@ func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (strin
 		},
 	}
 
-	fmt.Println("config.KeyBearerToken[GenBearerToken]", config.KeyBearerToken)
 	encryptedMember, err := encryption.Encrypte(authBody, config.KeyBearerToken, lt)
 	if err != nil {
 		return token, fmt.Errorf("failed to encrypt member: %w", err)
@@ -48,7 +47,7 @@ func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (strin
 	return token, nil
 }
 
-func ValidateBearerToken(token string, encryption port.Encryption) (domain.AuthBody, error) {
+func ValidateBearerToken(token string, encryption port.EncryptionUtil) (domain.AuthBody, error) {
 	config := util.LoadConfig()
 	authBody := domain.AuthBody{}
 	err := encryption.Decrypte(token, config.KeyBearerToken, &authBody)

@@ -2,7 +2,7 @@ package port
 
 import "Badminton-Hub/internal/core/domain"
 
-type MiddlewareUtil interface {
+type MiddlewareService interface {
 	Authentication
 	MiddlewareEncryption
 	MiddlewareCallback
@@ -13,7 +13,7 @@ type Authentication interface {
 }
 
 type MiddlewareEncryption interface {
-	Encryption() Encryption
+	Encryption() EncryptionUtil
 }
 
 type MiddlewareCallback interface {

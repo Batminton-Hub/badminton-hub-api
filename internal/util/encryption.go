@@ -1,4 +1,4 @@
-package service
+package core_util
 
 import (
 	"Badminton-Hub/util"
@@ -8,8 +8,8 @@ import (
 type JWTEncryption struct{}
 type AESEncryption struct{}
 
-func NewJWTEncryption() *JWTEncryption { return &JWTEncryption{} }
-func NewAESEncryption() *AESEncryption { return &AESEncryption{} }
+func NewJWTEncryptionUtil() *JWTEncryption { return &JWTEncryption{} }
+func NewAESEncryption() *AESEncryption     { return &AESEncryption{} }
 
 func (jwt *JWTEncryption) Encrypte(body any, key string, lt time.Duration) (string, error) {
 	return util.JWTEncrypt(body, key, lt)

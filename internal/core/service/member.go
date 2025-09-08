@@ -5,7 +5,6 @@ import (
 	"Badminton-Hub/internal/core/port"
 	core_util "Badminton-Hub/internal/util"
 	"Badminton-Hub/util"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -15,34 +14,37 @@ import (
 const (
 	REGISTER = "REGISTER"
 	LOGIN    = "LOGIN"
+)
 
-	// Platform
+const ( // Platform
 	GOOGLE = "GOOGLE"
+)
 
-	// Status
+const ( // Status
 	PENDING = "PENDING"
 	ACTIVE  = "ACTIVE"
 	BANNED  = "BANNED"
 	DELETED = "DELETED"
+)
 
-	// Type Member
+const ( // Type Member
 	MEMBER = "MEMBER"
 )
 
-type MemberUtil struct {
+type MemberService struct {
 	memberRepo     port.MemberRepo
-	middlewareUtil port.MiddlewareUtil
+	middlewareUtil port.MiddlewareService
 }
 
-func NewMemberUtil(memberRepo port.MemberRepo, middlewareUtil port.MiddlewareUtil) *MemberUtil {
-	memberUtil := &MemberUtil{
+func NewMemberService(memberRepo port.MemberRepo, middlewareUtil port.MiddlewareService) *MemberService {
+	memberService := &MemberService{
 		memberRepo:     memberRepo,
 		middlewareUtil: middlewareUtil,
 	}
-	return memberUtil
+	return memberService
 }
 
-func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember) {
+func (m *MemberService) RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember) {
 	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 
@@ -96,7 +98,7 @@ func (m *MemberUtil) RegisterMember(registerForm domain.RegisterForm) (int, doma
 	return http.StatusCreated, response // 201 Created for successful registration
 }
 
-func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogin) {
+func (m *MemberService) Login(loginForm domain.LoginForm) (int, domain.ResponseLogin) {
 	response := domain.ResponseLogin{}
 	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
@@ -118,9 +120,6 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 	}
 
 	// create token
-	fmt.Println("Login")
-	fmt.Println("CreateAt : ", memberBody.CreatedAt)
-	fmt.Println("UserID : ", memberBody.UserID)
 	hashAuth := domain.HashAuth{
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
@@ -139,7 +138,7 @@ func (m *MemberUtil) Login(loginForm domain.LoginForm) (int, domain.ResponseLogi
 	return http.StatusOK, response
 }
 
-func (m *MemberUtil) GoogleRegister(responseGoogle any) (int, domain.ResponseRegisterMember) {
+func (m *MemberService) GoogleRegister(responseGoogle any) (int, domain.ResponseRegisterMember) {
 	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 
@@ -192,7 +191,7 @@ func (m *MemberUtil) GoogleRegister(responseGoogle any) (int, domain.ResponseReg
 	return http.StatusCreated, response
 }
 
-func (m *MemberUtil) GoogleLogin(responseGoogle any) (int, domain.ResponseLogin) {
+func (m *MemberService) GoogleLogin(responseGoogle any) (int, domain.ResponseLogin) {
 	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 
@@ -233,7 +232,7 @@ func (m *MemberUtil) GoogleLogin(responseGoogle any) (int, domain.ResponseLogin)
 	return http.StatusOK, response
 }
 
-func (m *MemberUtil) GetProfile(userID string) (int, domain.ResponseGetProfile) {
+func (m *MemberService) GetProfile(userID string) (int, domain.ResponseGetProfile) {
 	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 
@@ -251,18 +250,47 @@ func (m *MemberUtil) GetProfile(userID string) (int, domain.ResponseGetProfile) 
 	return http.StatusOK, response
 }
 
-type RedirectUtil struct {
-	cache port.Cache
+func (m *MemberService) UpdateProfile(userID string, request domain.RequestUpdateProfile) (int, domain.ResponseUpdateProfile) {
+	ctx, cancel := util.InitConText(2 * time.Second)
+	defer cancel()
+
+	response := domain.ResponseUpdateProfile{}
+
+	if request.DisplayName == "" &&
+		request.ProfileImage == "" &&
+		request.DateOfBirth == "" &&
+		request.Region == "" &&
+		request.Gender == "" &&
+		request.Phone == "" &&
+		len(request.Tag) == 0 {
+		response.Code = domain.ErrInvalidInput.Code
+		response.Message = domain.ErrInvalidInput.Msg
+		return http.StatusBadRequest, response
+	}
+
+	if err := m.memberRepo.UpdateMember(ctx, userID, request); err != nil {
+		response.Code = domain.ErrUpdateMemberFail.Code
+		response.Message = domain.ErrUpdateMemberFail.Msg
+		return http.StatusInternalServerError, response
+	}
+
+	response.Code = domain.UpdateMemberSuccess.Code
+	response.Message = domain.UpdateMemberSuccess.Msg
+	return http.StatusOK, response
 }
 
-func NewRedirectUtil(cache port.Cache) *RedirectUtil {
-	redirecUtil := &RedirectUtil{
+type RedirectService struct {
+	cache port.CacheUtil
+}
+
+func NewRedirectService(cache port.CacheUtil) *RedirectService {
+	redirecUtil := &RedirectService{
 		cache: cache,
 	}
 	return redirecUtil
 }
 
-func (m *RedirectUtil) GoogleLogin() (int, domain.ResponseRedirectGoogleLogin) {
+func (m *RedirectService) GoogleLogin() (int, domain.ResponseRedirectGoogleLogin) {
 	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 
@@ -297,7 +325,7 @@ func (m *RedirectUtil) GoogleLogin() (int, domain.ResponseRedirectGoogleLogin) {
 	return http.StatusTemporaryRedirect, response
 }
 
-func (m *RedirectUtil) GoogleRegister() (int, domain.ResponseRedirectGoogleRegister) {
+func (m *RedirectService) GoogleRegister() (int, domain.ResponseRedirectGoogleRegister) {
 	ctx, cancel := util.InitConText(2 * time.Second)
 	defer cancel()
 

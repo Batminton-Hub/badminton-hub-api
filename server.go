@@ -5,6 +5,7 @@ import (
 	redisCache "Badminton-Hub/internal/adapter/outbound/cache/redis"
 	mongodb "Badminton-Hub/internal/adapter/outbound/database/mongoDB"
 	"Badminton-Hub/internal/core/service"
+	core_util "Badminton-Hub/internal/util"
 	"Badminton-Hub/util"
 	"log"
 )
@@ -25,11 +26,13 @@ func StartServer() {
 	// Initialize Redis cache
 	cacheRedis := redisCache.NewRedisCache()
 
+	// Initialize Util
+	encryptionJWT := core_util.NewJWTEncryptionUtil()
+
 	// Initialize services
-	encryptionJWT := service.NewJWTEncryption()
-	middleware := service.NewMiddlewareUtil(encryptionJWT, cacheRedis)
-	memberUtil := service.NewMemberUtil(db, middleware)
-	redirectUtil := service.NewRedirectUtil(cacheRedis)
+	middleware := service.NewMiddlewareService(encryptionJWT, cacheRedis)
+	memberUtil := service.NewMemberService(db, middleware)
+	redirectUtil := service.NewRedirectService(cacheRedis)
 
 	// Initialize HTTP server
 	externalRoute := gin.NewGinMainRoute(

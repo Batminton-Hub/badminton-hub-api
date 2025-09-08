@@ -14,8 +14,8 @@ type MainRoute struct {
 }
 
 func NewGinMainRoute(
-	middleware port.MiddlewareUtil,
-	memberUtil port.MemberUtilGroup,
+	middleware port.MiddlewareService,
+	memberUtil port.MemberService,
 	redirectUtil port.RedirectUtil,
 ) *MainRoute {
 	return &MainRoute{
@@ -37,6 +37,7 @@ type MemberController interface {
 
 type ProfileController interface {
 	GetProfile(c *gin.Context)
+	UpdateProfile(c *gin.Context)
 }
 
 type MiddlewareController interface {

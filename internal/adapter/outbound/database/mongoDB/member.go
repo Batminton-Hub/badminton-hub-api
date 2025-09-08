@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	MemberCollection = "members"
+	MemberCollection = "member"
 )
 
 func (db *MongoDB) SaveMember(ctx context.Context, member domain.Member) error {
@@ -73,4 +73,23 @@ func (db *MongoDB) GetMemberByUserID(ctx context.Context, userID string) (domain
 		return member, err
 	}
 	return member, nil
+}
+
+func (db *MongoDB) UpdateMember(ctx context.Context, userID string, request domain.RequestUpdateProfile) error {
+	collection := db.Database.Collection(MemberCollection)
+
+	filter := bson.M{
+		"user_id": userID,
+	}
+	update := bson.M{
+		"$set": request,
+	}
+	result, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return domain.ErrUpdateMemberFail.Err
+	}
+	return nil
 }

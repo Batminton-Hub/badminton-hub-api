@@ -1,4 +1,4 @@
-package service
+package core_util
 
 import (
 	"Badminton-Hub/internal/core/port"
@@ -7,10 +7,10 @@ import (
 )
 
 type CacheUtil struct {
-	cache port.Cache
+	cache port.CacheUtil
 }
 
-func NewCacheUtil(cache port.Cache) *CacheUtil {
+func NewCacheUtil(cache port.CacheUtil) *CacheUtil {
 	return &CacheUtil{
 		cache: cache,
 	}
