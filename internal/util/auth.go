@@ -14,27 +14,30 @@ func HashAuth(rawHash, key string) string {
 	return hashAuth
 }
 
-func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (string, error) {
+func GenBearerToken(hashBody domain.HashAuth, encryption port.EncryptionUtil) (string, error) {
 	var token string
 	config := util.LoadConfig()
 
-	lt := time.Duration(5 * time.Minute)
-	exp := time.Now().Add(lt).Unix()
+	lt := config.BearerTokenExp
 	createAt := time.Now().UTC()
+	exp := time.Now().Add(lt).Unix()
+
 	byteHash, err := util.EncryptGOB(hashBody)
 	if err != nil {
 		return token, fmt.Errorf("failed to encrypt hash body: %w", err)
 	}
 	rawHash := string(byteHash)
 	authBody := domain.AuthBody{
-		Exp: exp,
+		CreateAt: createAt,
+		Exp:      exp,
 		Data: domain.AuthMember{
-			CreatedAt: createAt,
+			UserID:    hashBody.UserID,
+			CreatedAt: hashBody.CreateAt,
 			HashAuth:  HashAuth(rawHash, config.KeyHashAuth),
 		},
 	}
 
-	encryptedMember, err := encryption.Encrypte(authBody, "your-encryption-key-here", lt)
+	encryptedMember, err := encryption.Encrypte(authBody, config.KeyBearerToken, lt)
 	if err != nil {
 		return token, fmt.Errorf("failed to encrypt member: %w", err)
 	}
@@ -44,15 +47,16 @@ func GenBearerToken(hashBody domain.HashAuth, encryption port.Encryption) (strin
 	return token, nil
 }
 
-func ValidateBearerToken(encryption port.Encryption, token string) (domain.AuthBody, error) {
+func ValidateBearerToken(token string, encryption port.EncryptionUtil) (domain.AuthBody, error) {
+	config := util.LoadConfig()
 	authBody := domain.AuthBody{}
-
-	err := encryption.Decrypte(token, "your-encryption-key-here", &authBody)
+	err := encryption.Decrypte(token, config.KeyBearerToken, &authBody)
 	if err != nil {
 		return authBody, err
 	}
 
 	if authBody.Exp < time.Now().Unix() {
+		fmt.Println("authBody.Exp < time.Now().Unix() : ", authBody.Exp, " : ", time.Now().Unix())
 		return authBody, fmt.Errorf("token has expired")
 	}
 

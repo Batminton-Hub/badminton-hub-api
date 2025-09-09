@@ -10,16 +10,18 @@ import (
 const google = "GOOGLE"
 
 type MiddlewareControllerImpl struct {
-	port.MiddlewareUtil
+	port.MiddlewareService
 }
 
 func (m *MiddlewareControllerImpl) Authenticate(c *gin.Context) {
 	token := c.GetHeader("Authorization")
-	httpCode, response := m.MiddlewareUtil.Authenticate(token)
-	if httpCode != http.StatusOK {
-		RespAuth(c, httpCode, response)
+	httpStatus, response := m.MiddlewareService.Authenticate(token)
+	if httpStatus != http.StatusOK {
+		RespAuth(c, httpStatus, response.Code, response.Message)
 		return
 	}
+
+	c.Set("user_id", response.AuthBody.Data.UserID)
 
 	c.Next()
 }
@@ -28,9 +30,9 @@ func (m *MiddlewareControllerImpl) GoogleLoginCallback(c *gin.Context) {
 	state := c.Query("state")
 	code := c.Query("code")
 
-	httpStatus, response := m.MiddlewareUtil.GoogleLoginCallback(state, code)
+	httpStatus, response := m.MiddlewareService.GoogleLoginCallback(state, code)
 	if httpStatus != http.StatusOK {
-		RespAuth(c, httpStatus, response)
+		RespAuth(c, httpStatus, response.Code, response.Message)
 		return
 	}
 
@@ -44,9 +46,9 @@ func (m *MiddlewareControllerImpl) GoogleRegisterCallback(c *gin.Context) {
 	state := c.Query("state")
 	code := c.Query("code")
 
-	httpStatus, response := m.MiddlewareUtil.GoogleRegisterCallback(state, code)
+	httpStatus, response := m.MiddlewareService.GoogleRegisterCallback(state, code)
 	if httpStatus != http.StatusOK {
-		RespAuth(c, httpStatus, response)
+		RespAuth(c, httpStatus, response.Code, response.Message)
 		return
 	}
 

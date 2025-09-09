@@ -1,13 +1,16 @@
 package port
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
-type Cache interface {
+type CacheUtil interface {
 	CacheGoogle
 }
 
 type CacheGoogle interface {
-	GetGoogleState(key string) (bool, error)
-	SetGoogleState(key string, lt time.Duration) error
-	DelGoogleState(key string) error
+	GetGoogleState(ctx context.Context, key string) (bool, error)
+	SetGoogleState(ctx context.Context, key string, lt time.Duration) error
+	DelGoogleState(ctx context.Context, key string) error
 }
