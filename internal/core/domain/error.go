@@ -1,69 +1,82 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+)
 
-type ErrorResp struct {
-	Code int
-	Msg  string
-	Err  error
+type Resp struct {
+	HttpStatus int
+	Status     string
+	Code       int
+	Msg        string
+	Err        error
 }
 
-type SuccessResp struct {
-	Code int
-	Msg  string
-}
+// type SuccessResp struct {
+// 	HttpStatus int
+// 	Status     string
+// 	Code       int
+// 	Msg        string
+// }
 
-func errorNew(code int, msg string) ErrorResp {
-	return ErrorResp{
-		Code: code,
-		Msg:  msg,
-		Err:  fmt.Errorf("%s", msg),
+func errorNew(code int, msg string, httpStatus int) Resp {
+	return Resp{
+		HttpStatus: httpStatus,
+		Status:     ERROR,
+		Code:       code,
+		Msg:        msg,
+		Err:        fmt.Errorf("%s", msg),
 	}
 }
 
-func successNew(code int, msg string) SuccessResp {
-	return SuccessResp{
-		Code: code,
-		Msg:  msg,
+func successNew(code int, msg string, httpStatus int) Resp {
+	return Resp{
+		HttpStatus: httpStatus,
+		Status:     SUCCESS,
+		Code:       code,
+		Msg:        msg,
 	}
 }
 
 var (
 	//////////////////////// Success Code ////////////////////////
-	Success             = successNew(0, "Success")
-	RegisterSuccess     = successNew(0, "Success")
-	LoginSuccess        = successNew(0, "Success")
-	AuthSuccess         = successNew(0, "Success")
-	UpdateMemberSuccess = successNew(0, "Success")
+	Success             = successNew(0, "Success", http.StatusOK)
+	RegisterSuccess     = successNew(0, "Success", http.StatusCreated)
+	LoginSuccess        = successNew(0, "Success", http.StatusOK)
+	AuthSuccess         = successNew(0, "Success", http.StatusOK)
+	UpdateMemberSuccess = successNew(0, "Success", http.StatusOK)
+	RedirectSuccess     = successNew(0, "Success", http.StatusTemporaryRedirect)
 
 	//////////////////////// Error Code ////////////////////////
 	// Config
-	ErrLoadConfig = errorNew(1000, "Failed to load config")
+	ErrLoadConfig = errorNew(1000, "Failed to load config", http.StatusInternalServerError) // ไม่สามารถโหลดค่า config ได้
 
 	// Request
-	ErrInvalidInput = errorNew(1001, "Invalid input")
+	ErrInvalidInput       = errorNew(1001, "Invalid input", http.StatusBadRequest)        // ข้อมูลไม่ถูกต้อง
+	ErrPlatformNotSupport = errorNew(1002, "Platform not support", http.StatusBadRequest) // ระบบไม่รองรับ Platform นี้
 
 	// Member
-	ErrMemberRegisterFailDuplicateEmail = errorNew(2000, "Register member failed: duplicate email")
-	ErrMemberRegisterFailDuplicateHash  = errorNew(2001, "Register member failed: duplicate hash")
-	ErrMemberEmailNotFound              = errorNew(2002, "Email not found")
-	ErrCreateMemberFail                 = errorNew(2003, "Failed to create member")
-	ErrLoginHashPassword                = errorNew(2004, "Failed to hash password")
-	ErrGetMember                        = errorNew(2005, "Failed to get member")
-	ErrUpdateMemberFail                 = errorNew(2006, "Failed to update member")
+	ErrMemberRegisterFailDuplicateEmail = errorNew(2000, "Register member failed: duplicate email", http.StatusBadRequest)
+	ErrMemberRegisterFailDuplicateHash  = errorNew(2001, "Register member failed: duplicate hash", http.StatusBadRequest)
+	ErrMemberEmailNotFound              = errorNew(2002, "Email not found", http.StatusBadRequest)
+	ErrCreateMemberFail                 = errorNew(2003, "Failed to create member", http.StatusBadRequest)
+	ErrLoginHashPassword                = errorNew(2004, "Failed to hash password", http.StatusBadRequest)
+	ErrGetMember                        = errorNew(2005, "Failed to get member", http.StatusBadRequest)
+	ErrUpdateMemberFail                 = errorNew(2006, "Failed to update member", http.StatusBadRequest)
 
 	// OAuth
-	ErrInvalidOAuthState    = errorNew(3000, "Invalid OAuth state")
-	ErrSetGoogleState       = errorNew(3001, "Failed to set Google OAuth state")
-	ErrInvalidOAuthExchange = errorNew(3002, "Invalid OAuth exchange")
-	ErrInvalidOAuthClient   = errorNew(3003, "Invalid OAuth client")
-	ErrInvalidOAuthDecode   = errorNew(3004, "Invalid OAuth decode")
+	ErrInvalidOAuthState    = errorNew(3000, "Invalid OAuth state", http.StatusBadRequest)
+	ErrSetGoogleState       = errorNew(3001, "Failed to set Google OAuth state", http.StatusBadRequest)
+	ErrInvalidOAuthExchange = errorNew(3002, "Invalid OAuth exchange", http.StatusBadRequest)
+	ErrInvalidOAuthClient   = errorNew(3003, "Invalid OAuth client", http.StatusBadRequest)
+	ErrInvalidOAuthDecode   = errorNew(3004, "Invalid OAuth decode", http.StatusBadRequest)
 
 	// Token
-	ErrGenerateToken    = errorNew(4000, "Failed to generate token")
-	ErrValidateToken    = errorNew(4001, "Failed to validate token")
-	ErrValidateHashAuth = errorNew(4002, "Failed to validate hash auth")
-	ErrTokenExpired     = errorNew(4003, "Token has expired")
+	ErrGenerateToken    = errorNew(4000, "Failed to generate token", http.StatusBadRequest)
+	ErrValidateToken    = errorNew(4001, "Failed to validate token", http.StatusBadRequest)
+	ErrValidateHashAuth = errorNew(4002, "Failed to validate hash auth", http.StatusBadRequest)
+	ErrTokenExpired     = errorNew(4003, "Token has expired", http.StatusBadRequest)
 )
 
 type ResponseError struct {

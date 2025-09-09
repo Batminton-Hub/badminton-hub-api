@@ -7,46 +7,17 @@ import (
 )
 
 type MainRoute struct {
-	Engine               *gin.Engine
-	MiddlewareController MiddlewareController
-	MemberController     MemberControllerGroup
-	RedirectController   RedirectController
+	engine         *gin.Engine
+	authentication AuthenticationSystemController
+	redirect       RedirectController
 }
 
-func NewGinMainRoute(
-	middleware port.MiddlewareService,
-	memberUtil port.MemberService,
-	redirectUtil port.RedirectUtil,
+func NewGinRoute(
+	authenticationSystem port.AuthenticationSystem,
+	redirect port.RedirectService,
 ) *MainRoute {
 	return &MainRoute{
-		MiddlewareController: &MiddlewareControllerImpl{middleware},
-		RedirectController:   &RedirectControllerImpl{redirectUtil},
-		MemberController:     &MemberControllerImpl{memberUtil},
+		authentication: &AuthenticationSystem{authenticationSystem},
+		redirect:       &Redirect{redirect},
 	}
-}
-
-type MemberControllerGroup interface {
-	MemberController
-	ProfileController
-}
-
-type MemberController interface {
-	RegisterMember(c *gin.Context)
-	Login(c *gin.Context)
-}
-
-type ProfileController interface {
-	GetProfile(c *gin.Context)
-	UpdateProfile(c *gin.Context)
-}
-
-type MiddlewareController interface {
-	Authenticate(c *gin.Context)
-	GoogleLoginCallback(c *gin.Context)
-	GoogleRegisterCallback(c *gin.Context)
-}
-
-type RedirectController interface {
-	GoogleLogin(c *gin.Context)
-	GoogleRegister(c *gin.Context)
 }

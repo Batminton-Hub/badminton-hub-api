@@ -35,7 +35,7 @@ const (
 	REDIS_CACHE_DB       = "REDIS_CACHE_DB"
 	DEFAULT_AES_IV       = "DEFAULT_AES_IV"
 	DEFAULT_GOOGLE_STATE = "DEFAULT_GOOGLE_STATE"
-	BEARER_TOKEN_EXP     = "BEAR_TOKEN_EXP"
+	BEARER_TOKEN_EXP     = "BEARER_TOKEN_EXP"
 )
 
 // Server Config
@@ -60,8 +60,10 @@ func SetConfig() error {
 		KeyHashPassword: getEnv(KEY_HASH_PASSWORD, "default_hash_key"),
 
 		// Google OAuth
-		GoogleLoginRedirectURL:    getEnv(GOOGLE_LOGIN_URL, "http://localhost:8080/member/auth/google/callback/login"),
-		GoogleRegisterRedirectURL: getEnv(GOOGLE_REGISTER_URL, "http://localhost:8080/member/auth/google/callback/register"),
+		// GoogleLoginRedirectURL:    getEnv(GOOGLE_LOGIN_URL, "http://localhost:8080/member/auth/google/callback/login"),
+		// GoogleRegisterRedirectURL: getEnv(GOOGLE_REGISTER_URL, "http://localhost:8080/member/auth/google/callback/register"),
+		GoogleLoginRedirectURL:    getEnv(GOOGLE_LOGIN_URL, "http://localhost:8080/callback/google/login"),
+		GoogleRegisterRedirectURL: getEnv(GOOGLE_REGISTER_URL, "http://localhost:8080/callback/google/register"),
 		GoogleClinentID:           getEnv(GOOGLE_CLIENT_ID, "1030829763252-hngbodu9d2vqu2c82n80f86gl8urtq5n.apps.googleusercontent.com"),
 		GoogleClientSecret:        getEnv(GOOGLE_CLIENT_SECRET, "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"),
 
@@ -81,6 +83,9 @@ func SetConfig() error {
 	fmt.Println("config.TokenExpired ", config.BearerTokenExp)
 	fmt.Println("config.DefaultAESIV ", config.DefaultAESIV)
 	fmt.Println("config.RedisCacheDB ", config.RedisCacheDB)
+	fmt.Println("config.DefaultGoogleState ", config.DefaultGoogleState)
+	fmt.Println("config.GoogleLoginRedirectURL ", config.GoogleLoginRedirectURL)
+	fmt.Println("config.GoogleRegisterRedirectURL ", config.GoogleRegisterRedirectURL)
 
 	return nil
 }

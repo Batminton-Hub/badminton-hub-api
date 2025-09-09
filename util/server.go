@@ -39,3 +39,12 @@ func ShutdownServer() {
 
 	fmt.Println("Server exited gracefully")
 }
+
+func RunServer(handler http.Handler) {
+	srv := HttpServer(handler)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal("Listen error:", err)
+		}
+	}()
+}

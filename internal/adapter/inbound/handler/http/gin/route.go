@@ -1,37 +1,42 @@
 package gin
 
 import (
+	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/util"
-	"log"
-	"net/http"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (m *MainRoute) RouteMember() {
-	member := m.Engine.Group("/member")
-	{
-		member.POST("/register", m.MemberController.RegisterMember)
-		member.POST("/login", m.MemberController.Login)
-		member.GET("/google/login", m.RedirectController.GoogleLogin)
-		member.GET("/google/register", m.RedirectController.GoogleRegister)
-		member.GET("/auth/google/callback/login", m.MiddlewareController.GoogleLoginCallback, m.MemberController.Login)
-		member.GET("/auth/google/callback/register", m.MiddlewareController.GoogleRegisterCallback, m.MemberController.RegisterMember)
-
-		member.GET("/profile", m.MiddlewareController.Authenticate, m.MemberController.GetProfile)
-		member.PATCH("/profile", m.MiddlewareController.Authenticate, m.MemberController.UpdateProfile)
-	}
-}
-
 func (m *MainRoute) Start() {
-	m.Engine = gin.Default()
+	m.engine = gin.Default()
 }
 
 func (m *MainRoute) Run() {
-	srv := util.HttpServer(m.Engine)
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("Listen error:", err)
-		}
-	}()
+	util.RunServer(m.engine)
+}
+
+func (m *MainRoute) RouteAuthenticationSystem() {
+	r := m.engine
+	authentication := r.Group("/authentication")
+	authentication.POST("/login", m.authentication.Login)
+	authentication.POST("/register", m.authentication.Register)
+}
+
+func (m *MainRoute) RouteRedirect() {
+	r := m.engine
+	redirect := r.Group("/redirect")
+	redirect.GET("/:platform/login", m.redirect.Login)
+	redirect.GET("/:platform/register", m.redirect.Register)
+}
+
+func (m *MainRoute) RouteCallback() {
+	r := m.engine
+	callback := r.Group("/callback")
+	callback.GET("/:platform/login", m.authentication.MiddleWare(domain.LOGIN), m.authentication.Login)
+	callback.GET("/:platform/register", m.authentication.MiddleWare(domain.REGISTER), m.authentication.Register)
+}
+
+func Test(c *gin.Context) {
+	fmt.Println("Test")
 }
