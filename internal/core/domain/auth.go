@@ -13,12 +13,6 @@ type HashAuth struct {
 	UserID   string
 }
 
-// type AuthResponse struct {
-// 	AuthBody AuthBody `json:"auth_body,omitempty"`
-// 	Code     int      `json:"code,omitempty"`
-// 	Message  string   `json:"message,omitempty"`
-// }
-
 type AuthBody struct {
 	CreateAt   time.Time  `json:"create_at"`
 	Exp        int64      `json:"exp"`
@@ -29,8 +23,6 @@ type AuthBody struct {
 type BearerToken struct {
 	Token string `json:"token"`
 }
-
-//---New Flow---//
 
 type LoginInfo struct {
 	Platform     string

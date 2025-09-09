@@ -2,9 +2,9 @@ package server
 
 import (
 	"Badminton-Hub/internal/adapter/inbound/handler/http/gin"
-	redisCache "Badminton-Hub/internal/adapter/outbound/cache/redis"
-	mongodb "Badminton-Hub/internal/adapter/outbound/database/mongoDB"
-	google "Badminton-Hub/internal/adapter/outbound/redirect/google"
+	"Badminton-Hub/internal/adapter/outbound/3rdParty/google"
+	"Badminton-Hub/internal/adapter/outbound/cache/redis"
+	"Badminton-Hub/internal/adapter/outbound/database/mongoDB"
 	"Badminton-Hub/internal/core/service"
 	"Badminton-Hub/internal/core_util"
 	"Badminton-Hub/util"
@@ -22,10 +22,10 @@ func StartServer() {
 	config := util.LoadConfig()
 
 	// Initialize MongoDB
-	db := mongodb.NewMongoDB(config.DBName)
+	db := mongoDB.NewMongoDB(config.DBName)
 
 	// Initialize Redis cache
-	cacheRedis := redisCache.NewRedisCache()
+	cacheRedis := redis.NewRedisCache()
 
 	// Setup Util
 	encryptionJWT := core_util.NewJWTEncryptionUtil()
@@ -48,6 +48,7 @@ func StartServer() {
 		redirect,
 	)
 
+	// Initialize HTTP server
 	externalRoute.Start()
 	defer externalRoute.Run()
 

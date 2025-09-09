@@ -1,4 +1,4 @@
-package mongodb
+package mongoDB
 
 import (
 	"Badminton-Hub/util"

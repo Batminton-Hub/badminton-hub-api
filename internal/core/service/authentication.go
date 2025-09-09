@@ -118,7 +118,6 @@ func (m *MiddlewareService) ValidateBearerToken(tokenObj domain.BearerToken) (do
 	}
 
 	if authBody.Exp < time.Now().Unix() {
-		fmt.Println("authBody.Exp < time.Now().Unix() : ", authBody.Exp, " : ", time.Now().Unix())
 		return authBody, fmt.Errorf("token has expired")
 	}
 

@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -97,23 +96,23 @@ func LoadConfig() domain.InternalConfig {
 // Google Config
 func GoogleConfig(typeRedirect string) (*domain.GoogleOAuth, error) {
 	config := LoadConfig()
-	var redirectURL string
+	var callbackURL string
 	switch typeRedirect {
-	case "LOGIN":
-		redirectURL = config.GoogleLoginRedirectURL
-	case "REGISTER":
-		redirectURL = config.GoogleRegisterRedirectURL
+	case domain.LOGIN:
+		callbackURL = config.GoogleLoginRedirectURL
+	case domain.REGISTER:
+		callbackURL = config.GoogleRegisterRedirectURL
 	default:
-		redirectURL = strings.ToUpper(typeRedirect)
+		return nil, domain.ErrActionNotSupport.Err
 	}
-	fmt.Println("Redirect URL:", redirectURL)
+	fmt.Println("Callback URL:", callbackURL)
 	googleOAuth.Config = &oauth2.Config{
-		RedirectURL:  redirectURL,
+		RedirectURL:  callbackURL,
 		ClientID:     config.GoogleClinentID,
 		ClientSecret: config.GoogleClientSecret,
 		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
+			domain.GoogleUserInfoEmail,
+			domain.GoogleUserInfoProfile,
 		},
 		Endpoint: google.Endpoint,
 	}
@@ -149,43 +148,3 @@ func getEnv[T any](keyEnv string, defaultVal T) T {
 	}
 	return defaultVal
 }
-
-// func getEnvStr(keyEnv string, defaultVal string) string {
-// 	value := os.Getenv(keyEnv)
-// 	if value != "" {
-// 		return value
-// 	}
-// 	return defaultVal
-// }
-
-// func getEnvInt(keyEnv string, defaultVal int) int {
-// 	value := os.Getenv(keyEnv)
-// 	if value != "" {
-// 		num, err := strconv.Atoi(value)
-// 		if err != nil {
-// 			log.Fatalln("Failed to convert string to int: " + err.Error())
-// 		}
-// 		return num
-// 	}
-// 	return defaultVal
-// }
-
-// func getEnvByt(keyEnv string, defaultVal []byte) []byte {
-// 	value := os.Getenv(keyEnv)
-// 	if value != "" {
-// 		return []byte(value)
-// 	}
-// 	return defaultVal
-// }
-
-// func getEnvDur(keyEnv string, defaultVal time.Duration) time.Duration {
-// 	value := os.Getenv(keyEnv)
-// 	if value != "" {
-// 		num, err := strconv.Atoi(value)
-// 		if err != nil {
-// 			log.Fatalln("Failed to convert string to int: " + err.Error())
-// 		}
-// 		return time.Duration(num) * time.Minute
-// 	}
-// 	return defaultVal
-// }

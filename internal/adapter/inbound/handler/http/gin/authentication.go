@@ -72,8 +72,8 @@ func (a *AuthenticationSystem) MiddleWare(action string) func(c *gin.Context) {
 			return
 		}
 
-		c.Set("platform_data", response.PlatformData)
-		c.Set("platform", platform)
+		c.Set(domain.PlatformData, response.PlatformData)
+		c.Set(domain.Platform, platform)
 
 		c.Next()
 	}

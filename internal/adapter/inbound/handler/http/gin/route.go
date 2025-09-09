@@ -3,7 +3,6 @@ package gin
 import (
 	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/util"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,8 +34,4 @@ func (m *MainRoute) RouteCallback() {
 	callback := r.Group("/callback")
 	callback.GET("/:platform/login", m.authentication.MiddleWare(domain.LOGIN), m.authentication.Login)
 	callback.GET("/:platform/register", m.authentication.MiddleWare(domain.REGISTER), m.authentication.Register)
-}
-
-func Test(c *gin.Context) {
-	fmt.Println("Test")
 }

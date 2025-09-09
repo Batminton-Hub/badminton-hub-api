@@ -22,3 +22,18 @@ const ( // Status
 const ( // Type Member
 	MEMBER = "MEMBER"
 )
+
+const ( // Context
+	Authorization = "Authorization"
+	Platform      = "platform"
+	State         = "state"
+	Code          = "code"
+	API           = "api"
+	PlatformData  = "platform_data"
+)
+
+const ( // Google Config
+	GoogleUserInfoURL     = "https://www.googleapis.com/oauth2/v2/userinfo"
+	GoogleUserInfoEmail   = "https://www.googleapis.com/auth/userinfo.email"
+	GoogleUserInfoProfile = "https://www.googleapis.com/auth/userinfo.profile"
+)

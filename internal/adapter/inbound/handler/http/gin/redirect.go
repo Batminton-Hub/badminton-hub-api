@@ -4,7 +4,6 @@ import (
 	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/internal/core/port"
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,7 +28,7 @@ func (r *Redirect) Login(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusTemporaryRedirect, response.URL)
+	RespRedirect(c, httpStatus, response.Resp.Code, response.Resp.Msg, response.URL)
 }
 
 func (r *Redirect) Register(c *gin.Context) {
@@ -43,5 +42,5 @@ func (r *Redirect) Register(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusTemporaryRedirect, response.URL)
+	RespRedirect(c, httpStatus, response.Resp.Code, response.Resp.Msg, response.URL)
 }

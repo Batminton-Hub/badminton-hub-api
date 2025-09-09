@@ -13,13 +13,6 @@ type Resp struct {
 	Err        error
 }
 
-// type SuccessResp struct {
-// 	HttpStatus int
-// 	Status     string
-// 	Code       int
-// 	Msg        string
-// }
-
 func errorNew(code int, msg string, httpStatus int) Resp {
 	return Resp{
 		HttpStatus: httpStatus,
@@ -36,6 +29,7 @@ func successNew(code int, msg string, httpStatus int) Resp {
 		Status:     SUCCESS,
 		Code:       code,
 		Msg:        msg,
+		Err:        nil,
 	}
 }
 
@@ -77,6 +71,9 @@ var (
 	ErrValidateToken    = errorNew(4001, "Failed to validate token", http.StatusBadRequest)
 	ErrValidateHashAuth = errorNew(4002, "Failed to validate hash auth", http.StatusBadRequest)
 	ErrTokenExpired     = errorNew(4003, "Token has expired", http.StatusBadRequest)
+
+	// General
+	ErrActionNotSupport = errorNew(5000, "Action not support", http.StatusInternalServerError)
 )
 
 type ResponseError struct {

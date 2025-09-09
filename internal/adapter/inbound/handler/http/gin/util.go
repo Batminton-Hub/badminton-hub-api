@@ -7,14 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	Authorization = "Authorization"
-	PLATFORM_DATA = "platform_data"
-	PLATFORM      = "platform"
-	STATE         = "state"
-	CODE          = "code"
-)
-
 func RespAuth(c *gin.Context, httpStaus, code int, message string, bearerToken string) {
 	response := RespAuthBody{
 		Code:        code,
@@ -24,17 +16,26 @@ func RespAuth(c *gin.Context, httpStaus, code int, message string, bearerToken s
 	c.JSON(httpStaus, response)
 }
 
-func Resp(c *gin.Context, httpStaus, code int, message string, data any) {
+func Resp(c *gin.Context, httpStatus, code int, message string, data any) {
 	response := RespBody{
 		Code:    code,
 		Message: message,
 		Data:    data,
 	}
-	c.JSON(httpStaus, response)
+	c.JSON(httpStatus, response)
+}
+
+func RespRedirect(c *gin.Context, httpStatus, code int, message string, url string) {
+	api := c.Query(domain.API)
+	if api != "" {
+		Resp(c, httpStatus, code, message, url)
+		return
+	}
+	c.Redirect(httpStatus, url)
 }
 
 func getPlatform(c *gin.Context) string {
-	platform := strings.ToUpper(c.GetString(PLATFORM))
+	platform := strings.ToUpper(c.GetString(domain.Platform))
 	if platform == "" {
 		platform = domain.NORMAL
 	}
@@ -42,22 +43,22 @@ func getPlatform(c *gin.Context) string {
 }
 
 func getBearerToken(c *gin.Context) string {
-	bearerToken := c.GetHeader(Authorization)
+	bearerToken := c.GetHeader(domain.Authorization)
 	return bearerToken
 }
 
 func getState(c *gin.Context) string {
-	state := c.Query(STATE)
+	state := c.Query(domain.State)
 	return state
 }
 
 func getCode(c *gin.Context) string {
-	code := c.Query(CODE)
+	code := c.Query(domain.Code)
 	return code
 }
 
 func getPlatformData(c *gin.Context) any {
-	platformData, ok := c.Get(PLATFORM_DATA)
+	platformData, ok := c.Get(domain.PlatformData)
 	if !ok {
 		return nil
 	}
@@ -65,7 +66,7 @@ func getPlatformData(c *gin.Context) any {
 }
 
 func getPlatformParam(c *gin.Context) string {
-	return strings.ToUpper(c.Param(PLATFORM))
+	return strings.ToUpper(c.Param(domain.Platform))
 }
 
 type RespBody struct {
