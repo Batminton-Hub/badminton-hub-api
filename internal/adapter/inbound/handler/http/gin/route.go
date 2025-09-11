@@ -1,7 +1,6 @@
 package gin
 
 import (
-	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/util"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +31,14 @@ func (m *MainRoute) RouteRedirect() {
 func (m *MainRoute) RouteCallback() {
 	r := m.engine
 	callback := r.Group("/callback")
-	callback.GET("/:platform/login", m.authentication.MiddleWare(domain.LOGIN), m.authentication.Login)
-	callback.GET("/:platform/register", m.authentication.MiddleWare(domain.REGISTER), m.authentication.Register)
+	callback.GET("/:platform/login", m.authentication.MiddleWare, m.authentication.Login)
+	callback.GET("/:platform/register", m.authentication.MiddleWare, m.authentication.Register)
+}
+
+func (m *MainRoute) RouteMember() {
+	r := m.engine
+	member := r.Group("/member")
+	member.Use(m.authentication.MiddleWare)
+	member.GET("/profile", m.member.GetProfile)
+	member.PATCH("/profile", m.member.UpdateProfile)
 }

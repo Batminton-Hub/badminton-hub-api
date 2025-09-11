@@ -41,11 +41,13 @@ func StartServer() {
 
 	authenticationSystem := service.NewAuthenticationSystem(authenticate, middleware)
 	redirect := service.NewRedirect(googleRedirect)
+	member := service.NewMemberService(db)
 
 	// Initialize HTTP server
 	externalRoute := gin.NewGinRoute(
 		authenticationSystem,
 		redirect,
+		member,
 	)
 
 	// Initialize HTTP server
@@ -55,4 +57,5 @@ func StartServer() {
 	externalRoute.RouteAuthenticationSystem()
 	externalRoute.RouteRedirect()
 	externalRoute.RouteCallback()
+	externalRoute.RouteMember()
 }

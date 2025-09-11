@@ -1,66 +1,64 @@
 package service
 
-// type MemberService struct {
-// 	memberRepo     port.MemberRepo
-// 	middlewareUtil port.MiddlewareService
-// }
+import (
+	"Badminton-Hub/internal/core/domain"
+	"Badminton-Hub/internal/core/port"
+	"Badminton-Hub/util"
+	"time"
+)
 
-// type MemberServiceGoogle struct {
-// 	memberRepo     port.MemberRepo
-// 	middlewareUtil port.MiddlewareService
-// }
+type MemberService struct {
+	memberRepo     port.MemberRepo
+	middlewareUtil port.MiddlewareService
+}
 
-// func NewMemberService(memberRepo port.MemberRepo, middlewareUtil port.MiddlewareService) *MemberService {
-// 	memberService := &MemberService{
-// 		memberRepo:     memberRepo,
-// 		middlewareUtil: middlewareUtil,
-// 	}
-// 	return memberService
-// }
+func NewMemberService(
+	memberRepo port.MemberRepo,
+) *MemberService {
+	memberService := &MemberService{
+		memberRepo: memberRepo,
+	}
+	return memberService
+}
 
-// func (m *MemberService) GetProfile(userID string) (int, domain.ResponseGetProfile) {
-// 	ctx, cancel := util.InitConText(2 * time.Second)
-// 	defer cancel()
+func (m *MemberService) GetProfile(userInfo domain.ReqGetProfile) (int, domain.RespGetProfile) {
+	ctx, cancel := util.InitConText(2 * time.Second)
+	defer cancel()
 
-// 	response := domain.ResponseGetProfile{}
-// 	member, err := m.memberRepo.GetMemberByUserID(ctx, userID)
-// 	if err != nil {
-// 		response.Code = domain.ErrGetMember.Code
-// 		response.Message = domain.ErrGetMember.Msg
-// 		return http.StatusBadRequest, response
-// 	}
+	response := domain.RespGetProfile{}
+	member, err := m.memberRepo.GetMemberByUserID(ctx, userInfo.UserID)
+	if err != nil {
+		response.Resp = domain.ErrGetMember
+		return response.Resp.HttpStatus, response
+	}
 
-// 	response.Code = domain.Success.Code
-// 	response.Message = domain.Success.Msg
-// 	response.Member = member
-// 	return http.StatusOK, response
-// }
+	response.Member = member
+	response.Resp = domain.Success
+	return response.Resp.HttpStatus, response
+}
 
-// func (m *MemberService) UpdateProfile(userID string, request domain.RequestUpdateProfile) (int, domain.ResponseUpdateProfile) {
-// 	ctx, cancel := util.InitConText(2 * time.Second)
-// 	defer cancel()
+func (m *MemberService) UpdateProfile(userInfo domain.ReqGetProfile, request domain.ReqUpdateProfile) (int, domain.RespUpdateProfile) {
+	ctx, cancel := util.InitConText(2 * time.Second)
+	defer cancel()
 
-// 	response := domain.ResponseUpdateProfile{}
+	response := domain.RespUpdateProfile{}
+	if request.DisplayName == "" &&
+		request.ProfileImage == "" &&
+		request.DateOfBirth == "" &&
+		request.Region == "" &&
+		request.Gender == "" &&
+		request.Phone == "" &&
+		len(request.Tag) == 0 {
+		response.Resp = domain.ErrInvalidInput
+		return response.Resp.HttpStatus, response
+	}
 
-// 	if request.DisplayName == "" &&
-// 		request.ProfileImage == "" &&
-// 		request.DateOfBirth == "" &&
-// 		request.Region == "" &&
-// 		request.Gender == "" &&
-// 		request.Phone == "" &&
-// 		len(request.Tag) == 0 {
-// 		response.Code = domain.ErrInvalidInput.Code
-// 		response.Message = domain.ErrInvalidInput.Msg
-// 		return http.StatusBadRequest, response
-// 	}
+	userID := userInfo.UserID
+	if err := m.memberRepo.UpdateMember(ctx, userID, request); err != nil {
+		response.Resp = domain.ErrUpdateMemberFail
+		return response.Resp.HttpStatus, response
+	}
 
-// 	if err := m.memberRepo.UpdateMember(ctx, userID, request); err != nil {
-// 		response.Code = domain.ErrUpdateMemberFail.Code
-// 		response.Message = domain.ErrUpdateMemberFail.Msg
-// 		return http.StatusInternalServerError, response
-// 	}
-
-// 	response.Code = domain.UpdateMemberSuccess.Code
-// 	response.Message = domain.UpdateMemberSuccess.Msg
-// 	return http.StatusOK, response
-// }
+	response.Resp = domain.UpdateMemberSuccess
+	return response.Resp.HttpStatus, response
+}

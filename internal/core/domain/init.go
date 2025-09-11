@@ -30,6 +30,7 @@ const ( // Context
 	Code          = "code"
 	API           = "api"
 	PlatformData  = "platform_data"
+	UserID        = "user_id"
 )
 
 const ( // Google Config

@@ -16,6 +16,15 @@ func RespAuth(c *gin.Context, httpStaus, code int, message string, bearerToken s
 	c.JSON(httpStaus, response)
 }
 
+func RespMiddleWare(c *gin.Context, httpStatus, code int, message string) {
+	response := RespBody{
+		Code:    code,
+		Message: message,
+		Data:    nil,
+	}
+	c.AbortWithStatusJSON(httpStatus, response)
+}
+
 func Resp(c *gin.Context, httpStatus, code int, message string, data any) {
 	response := RespBody{
 		Code:    code,
@@ -66,7 +75,27 @@ func getPlatformData(c *gin.Context) any {
 }
 
 func getPlatformParam(c *gin.Context) string {
-	return strings.ToUpper(c.Param(domain.Platform))
+	platform := strings.ToUpper(c.Param(domain.Platform))
+	if platform == "" {
+		platform = domain.NORMAL
+	}
+	return platform
+}
+
+func getAction(c *gin.Context) string {
+	path := strings.ToUpper(c.FullPath())
+	switch {
+	case strings.Contains(path, domain.LOGIN):
+		return domain.LOGIN
+	case strings.Contains(path, domain.REGISTER):
+		return domain.REGISTER
+	default:
+		return ""
+	}
+}
+
+func getUserID(c *gin.Context) string {
+	return c.GetString(domain.UserID)
 }
 
 type RespBody struct {

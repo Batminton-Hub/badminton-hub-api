@@ -11,7 +11,7 @@ import (
 type AuthenticationSystemController interface {
 	Login(c *gin.Context)
 	Register(c *gin.Context)
-	MiddleWare(action string) func(c *gin.Context)
+	MiddleWare(c *gin.Context)
 }
 
 type AuthenticationSystem struct {
@@ -54,28 +54,26 @@ func (a *AuthenticationSystem) Register(c *gin.Context) {
 	RespAuth(c, code, response.Resp.Code, response.Resp.Msg, response.BearerToken)
 }
 
-func (a *AuthenticationSystem) MiddleWare(action string) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		platform := getPlatformParam(c)
-		authInfo := domain.AuthInfo{
-			BearerToken: domain.BearerToken{
-				Token: getBearerToken(c),
-			},
-			State:    getState(c),
-			Code:     getCode(c),
-			Platform: platform,
-			Action:   action,
-		}
-		httpStatus, response := a.authenticationSystem.Authenticate(authInfo)
-		if response.Resp.Status == domain.ERROR {
-			RespAuth(c, httpStatus, response.Resp.Code, response.Resp.Msg, "")
-			return
-		}
-
-		c.Set(domain.PlatformData, response.PlatformData)
-		c.Set(domain.Platform, platform)
-
-		c.Next()
+func (a *AuthenticationSystem) MiddleWare(c *gin.Context) {
+	platform := getPlatformParam(c)
+	authInfo := domain.AuthInfo{
+		BearerToken: domain.BearerToken{
+			Token: getBearerToken(c),
+		},
+		State:    getState(c),
+		Code:     getCode(c),
+		Action:   getAction(c),
+		Platform: platform,
+	}
+	httpStatus, response := a.authenticationSystem.Authenticate(authInfo)
+	if response.Resp.Status == domain.ERROR {
+		RespMiddleWare(c, httpStatus, response.Resp.Code, response.Resp.Msg)
+		return
 	}
 
+	c.Set(domain.PlatformData, response.PlatformData)
+	c.Set(domain.Platform, platform)
+	c.Set(domain.UserID, response.AuthBody.Data.UserID)
+
+	c.Next()
 }

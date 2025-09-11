@@ -75,7 +75,7 @@ func (db *MongoDB) GetMemberByUserID(ctx context.Context, userID string) (domain
 	return member, nil
 }
 
-func (db *MongoDB) UpdateMember(ctx context.Context, userID string, request domain.RequestUpdateProfile) error {
+func (db *MongoDB) UpdateMember(ctx context.Context, userID string, request domain.ReqUpdateProfile) error {
 	collection := db.Database.Collection(MemberCollection)
 
 	filter := bson.M{

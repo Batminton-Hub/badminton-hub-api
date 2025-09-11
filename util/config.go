@@ -17,24 +17,24 @@ var googleOAuth = &domain.GoogleOAuth{}
 var config = &domain.InternalConfig{}
 
 const (
-	MODE                 = "MODE"
-	SERVER_PORT          = "SERVER_PORT"
-	DB_NAME              = "DB_NAME"
-	MONGO_DB_URL         = "MONGO_DB_URL"
-	KEY_BEARER_TOKEN     = "KEY_BEARER_TOKEN"
-	KEY_HASH_AUTH        = "KEY_HASH_AUTH"
-	KEY_HASH_MEMBER      = "KEY_HASH_MEMBER"
-	KEY_HASH_PASSWORD    = "KEY_HASH_PASSWORD"
-	GOOGLE_LOGIN_URL     = "GOOGLE_LOGIN_URL"
-	GOOGLE_REGISTER_URL  = "GOOGLE_REGISTER_URL"
-	GOOGLE_CLIENT_ID     = "GOOGLE_CLIENT_ID"
-	GOOGLE_CLIENT_SECRET = "GOOGLE_CLIENT_SECRET"
-	REDIS_CACHE_ADDR     = "REDIS_CACHE_ADDR"
-	REDIS_CACHE_PASSWORD = "REDIS_CACHE_PASSWORD"
-	REDIS_CACHE_DB       = "REDIS_CACHE_DB"
-	DEFAULT_AES_IV       = "DEFAULT_AES_IV"
-	DEFAULT_GOOGLE_STATE = "DEFAULT_GOOGLE_STATE"
-	BEARER_TOKEN_EXP     = "BEARER_TOKEN_EXP"
+	MODE                         = "MODE"
+	SERVER_PORT                  = "SERVER_PORT"
+	DB_NAME                      = "DB_NAME"
+	MONGO_DB_URL                 = "MONGO_DB_URL"
+	KEY_BEARER_TOKEN             = "KEY_BEARER_TOKEN"
+	KEY_HASH_AUTH                = "KEY_HASH_AUTH"
+	KEY_HASH_MEMBER              = "KEY_HASH_MEMBER"
+	KEY_HASH_PASSWORD            = "KEY_HASH_PASSWORD"
+	GOOGLE_CALLBACK_LOGIN_URL    = "GOOGLE_LOGIN_URL"
+	GOOGLE_CALLBACK_REGISTER_URL = "GOOGLE_REGISTER_URL"
+	GOOGLE_CLIENT_ID             = "GOOGLE_CLIENT_ID"
+	GOOGLE_CLIENT_SECRET         = "GOOGLE_CLIENT_SECRET"
+	REDIS_CACHE_ADDR             = "REDIS_CACHE_ADDR"
+	REDIS_CACHE_PASSWORD         = "REDIS_CACHE_PASSWORD"
+	REDIS_CACHE_DB               = "REDIS_CACHE_DB"
+	DEFAULT_AES_IV               = "DEFAULT_AES_IV"
+	DEFAULT_GOOGLE_STATE         = "DEFAULT_GOOGLE_STATE"
+	BEARER_TOKEN_EXP             = "BEARER_TOKEN_EXP"
 )
 
 // Server Config
@@ -61,8 +61,8 @@ func SetConfig() error {
 		// Google OAuth
 		// GoogleLoginRedirectURL:    getEnv(GOOGLE_LOGIN_URL, "http://localhost:8080/member/auth/google/callback/login"),
 		// GoogleRegisterRedirectURL: getEnv(GOOGLE_REGISTER_URL, "http://localhost:8080/member/auth/google/callback/register"),
-		GoogleLoginRedirectURL:    getEnv(GOOGLE_LOGIN_URL, "http://localhost:8080/callback/google/login"),
-		GoogleRegisterRedirectURL: getEnv(GOOGLE_REGISTER_URL, "http://localhost:8080/callback/google/register"),
+		GoogleCallbackLoginURL:    getEnv(GOOGLE_CALLBACK_LOGIN_URL, "http://localhost:8080/callback/google/login"),
+		GoogleCallbackRegisterURL: getEnv(GOOGLE_CALLBACK_REGISTER_URL, "http://localhost:8080/callback/google/register"),
 		GoogleClinentID:           getEnv(GOOGLE_CLIENT_ID, "1030829763252-hngbodu9d2vqu2c82n80f86gl8urtq5n.apps.googleusercontent.com"),
 		GoogleClientSecret:        getEnv(GOOGLE_CLIENT_SECRET, "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"),
 
@@ -83,8 +83,8 @@ func SetConfig() error {
 	fmt.Println("config.DefaultAESIV ", config.DefaultAESIV)
 	fmt.Println("config.RedisCacheDB ", config.RedisCacheDB)
 	fmt.Println("config.DefaultGoogleState ", config.DefaultGoogleState)
-	fmt.Println("config.GoogleLoginRedirectURL ", config.GoogleLoginRedirectURL)
-	fmt.Println("config.GoogleRegisterRedirectURL ", config.GoogleRegisterRedirectURL)
+	fmt.Println("config.GoogleLoginRedirectURL ", config.GoogleCallbackLoginURL)
+	fmt.Println("config.GoogleRegisterRedirectURL ", config.GoogleCallbackRegisterURL)
 
 	return nil
 }
@@ -99,9 +99,9 @@ func GoogleConfig(typeRedirect string) (*domain.GoogleOAuth, error) {
 	var callbackURL string
 	switch typeRedirect {
 	case domain.LOGIN:
-		callbackURL = config.GoogleLoginRedirectURL
+		callbackURL = config.GoogleCallbackLoginURL
 	case domain.REGISTER:
-		callbackURL = config.GoogleRegisterRedirectURL
+		callbackURL = config.GoogleCallbackRegisterURL
 	default:
 		return nil, domain.ErrActionNotSupport.Err
 	}

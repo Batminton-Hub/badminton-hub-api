@@ -191,7 +191,7 @@ func (g *GooglePlatform) Register(registerInfo domain.RegisterInfo) (int, domain
 	ctx := g.CTX
 
 	response := domain.RespRegister{}
-	info, ok := registerInfo.PlatformData.(domain.ResponseGoogleRegisterCallback)
+	info, ok := registerInfo.PlatformData.(domain.GoogleMemberInfo)
 	if !ok {
 		response.Resp = domain.ErrInvalidOAuthDecode
 		return response.Resp.HttpStatus, response

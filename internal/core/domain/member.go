@@ -28,10 +28,10 @@ type Member struct {
 	// Address     Address   `json:"address"`      // Address details
 }
 
-type HashMember struct {
-	Email    string
-	Username string
-}
+// type HashMember struct {
+// 	Email    string
+// 	Username string
+// }
 
 type Address struct {
 	Home    string `json:"home"`     // บ้าน
@@ -49,11 +49,11 @@ type RegisterForm struct {
 	Gender   string `json:"gender" binding:"required"`         // เพศ
 }
 
-type ResponseRegisterMember struct {
-	BearerToken string `json:"bearer_token,omitempty"`
-	Code        int    `json:"code,omitempty"`
-	Message     string `json:"message,omitempty"`
-}
+// type ResponseRegisterMember struct {
+// 	BearerToken string `json:"bearer_token,omitempty"`
+// 	Code        int    `json:"code,omitempty"`
+// 	Message     string `json:"message,omitempty"`
+// }
 
 // Login Structure
 type LoginForm struct {
@@ -69,17 +69,17 @@ type ResponseLogin struct {
 	Message     string `json:"message,omitempty"`
 }
 
-type ResponseRedirectGoogleLogin struct {
-	URL     string `json:"url,omitempty"`
-	Code    int    `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-}
+// type ResponseRedirectGoogleLogin struct {
+// 	URL     string `json:"url,omitempty"`
+// 	Code    int    `json:"code,omitempty"`
+// 	Message string `json:"message,omitempty"`
+// }
 
-type ResponseRedirectGoogleRegister struct {
-	URL     string `json:"url,omitempty"`
-	Code    int    `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-}
+// type ResponseRedirectGoogleRegister struct {
+// 	URL     string `json:"url,omitempty"`
+// 	Code    int    `json:"code,omitempty"`
+// 	Message string `json:"message,omitempty"`
+// }
 
 type ResponseGoogleLoginCallback struct {
 	UserInfo     GoogleUserInfo `json:"user_info,omitempty"`
@@ -89,12 +89,10 @@ type ResponseGoogleLoginCallback struct {
 	Message      string         `json:"message,omitempty"`
 }
 
-type ResponseGoogleRegisterCallback struct {
+type GoogleMemberInfo struct {
 	UserInfo     GoogleUserInfo `json:"user_info,omitempty"`
 	AccessToken  string         `json:"access_token,omitempty"`
 	RefreshToken string         `json:"refresh_token,omitempty"`
-	Code         int            `json:"code,omitempty"`
-	Message      string         `json:"message,omitempty"`
 }
 
 type GoogleUserInfo struct {
@@ -107,13 +105,15 @@ type GoogleUserInfo struct {
 }
 
 // Profile
-type ResponseGetProfile struct {
-	Code    int    `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-	Member  Member `json:"member,omitempty"`
+type ReqGetProfile struct {
+	UserID string
+}
+type RespGetProfile struct {
+	Member Member `json:"member,omitempty"`
+	Resp   Resp   `json:"resp,omitempty"`
 }
 
-type RequestUpdateProfile struct {
+type ReqUpdateProfile struct {
 	DisplayName  string   `json:"display_name,omitempty" bson:"display_name,omitempty"`
 	ProfileImage string   `json:"profile_image,omitempty" bson:"profile_image,omitempty"`
 	DateOfBirth  string   `json:"date_of_birth,omitempty" bson:"date_of_birth,omitempty" binding:"omitempty,datetime=2006-01-02"`
@@ -123,7 +123,7 @@ type RequestUpdateProfile struct {
 	Tag          []string `json:"tag,omitempty" bson:"tag,omitempty"`
 }
 
-type ResponseUpdateProfile struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+type RespUpdateProfile struct {
+	Member Member `json:"member,omitempty"`
+	Resp   Resp   `json:"resp,omitempty"`
 }

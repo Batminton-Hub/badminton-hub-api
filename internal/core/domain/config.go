@@ -24,8 +24,8 @@ type InternalConfig struct {
 	KeyHashPassword string
 
 	// Google OAuth
-	GoogleLoginRedirectURL    string
-	GoogleRegisterRedirectURL string
+	GoogleCallbackLoginURL    string
+	GoogleCallbackRegisterURL string
 	GoogleClinentID           string
 	GoogleClientSecret        string
 
