@@ -1,35 +1,42 @@
 package gin
 
 import (
-	"Badminton-Hub/internal/core/port"
+	"Badminton-Hub/util"
 
 	"github.com/gin-gonic/gin"
 )
 
-type MainRoute struct {
-	MiddlewareController MiddlewareController
-	MemberController     MemberController
-	// MiddlewareController
-	// MemberController
+var engine *gin.Engine
+
+func (m *MainRoute) Start() {
+	engine = gin.Default()
 }
 
-func NewGinMainRoute(
-	middleware port.MiddlewareUtil,
-	memberUtil port.MemberUtil,
-) *MainRoute {
-	return &MainRoute{
-		MiddlewareController: &MiddlewareControllerImpl{middleware},
-		MemberController:     &MemberControllerImpl{memberUtil},
-	}
+func (m *MainRoute) Run() {
+	util.RunServer(engine)
+}
+
+func (m *MainRoute) RouteAuthenticationSystem() {
+	authentication := engine.Group("/authentication")
+	authentication.POST("/login", m.authentication.Login)
+	authentication.POST("/register", m.authentication.Register)
+}
+
+func (m *MainRoute) RouteRedirect() {
+	redirect := engine.Group("/redirect")
+	redirect.GET("/:platform/login", m.redirect.Login)
+	redirect.GET("/:platform/register", m.redirect.Register)
+}
+
+func (m *MainRoute) RouteCallback() {
+	callback := engine.Group("/callback")
+	callback.GET("/:platform/login", m.authentication.MiddleWare, m.authentication.Login)
+	callback.GET("/:platform/register", m.authentication.MiddleWare, m.authentication.Register)
 }
 
 func (m *MainRoute) RouteMember() {
-	r := gin.Default()
-	member := r.Group("/member")
-	member.Use(m.MiddlewareController.Authenticate)
-	{
-		member.POST("/register", m.MemberController.RegisterMember)
-	}
-
-	r.Run()
+	member := engine.Group("/member")
+	member.Use(m.authentication.MiddleWare)
+	member.GET("/profile", m.member.GetProfile)
+	member.PATCH("/profile", m.member.UpdateProfile)
 }

@@ -1,7 +1,9 @@
-package mongodb
+package mongoDB
 
 import (
+	"Badminton-Hub/util"
 	"context"
+	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -15,11 +17,11 @@ type MongoDB struct {
 	Cancel   context.CancelFunc
 }
 
-// func NewMongoDB() port.DatabaseService {
 func NewMongoDB(dbName string) *MongoDB {
-	client, err := mongo.Connect(options.Client().ApplyURI("mongodb://localhost:27017"))
+	config := util.LoadConfig()
+	client, err := mongo.Connect(options.Client().ApplyURI(config.MongoDBURL))
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	return &MongoDB{
@@ -31,8 +33,8 @@ func NewMongoDB(dbName string) *MongoDB {
 }
 
 func (db *MongoDB) CloseDB() {
-	defer db.Cancel()
 	if err := db.Client.Disconnect(db.Ctx); err != nil {
 		panic(err)
 	}
+	db.Cancel()
 }
