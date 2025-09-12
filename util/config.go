@@ -6,36 +6,32 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
-var googleOAuth = &domain.GoogleOAuth{}
 var config = &domain.InternalConfig{}
 
 const (
-	MODE                 = "MODE"
-	SERVER_PORT          = "SERVER_PORT"
-	DB_NAME              = "DB_NAME"
-	MONGO_DB_URL         = "MONGO_DB_URL"
-	KEY_BEARER_TOKEN     = "KEY_BEARER_TOKEN"
-	KEY_HASH_AUTH        = "KEY_HASH_AUTH"
-	KEY_HASH_MEMBER      = "KEY_HASH_MEMBER"
-	KEY_HASH_PASSWORD    = "KEY_HASH_PASSWORD"
-	GOOGLE_LOGIN_URL     = "GOOGLE_LOGIN_URL"
-	GOOGLE_REGISTER_URL  = "GOOGLE_REGISTER_URL"
-	GOOGLE_CLIENT_ID     = "GOOGLE_CLIENT_ID"
-	GOOGLE_CLIENT_SECRET = "GOOGLE_CLIENT_SECRET"
-	REDIS_CACHE_ADDR     = "REDIS_CACHE_ADDR"
-	REDIS_CACHE_PASSWORD = "REDIS_CACHE_PASSWORD"
-	REDIS_CACHE_DB       = "REDIS_CACHE_DB"
-	DEFAULT_AES_IV       = "DEFAULT_AES_IV"
-	DEFAULT_GOOGLE_STATE = "DEFAULT_GOOGLE_STATE"
-	BEARER_TOKEN_EXP     = "BEAR_TOKEN_EXP"
+	MODE                         = "MODE"
+	SERVER_PORT                  = "SERVER_PORT"
+	DB_NAME                      = "DB_NAME"
+	MONGO_DB_URL                 = "MONGO_DB_URL"
+	KEY_BEARER_TOKEN             = "KEY_BEARER_TOKEN"
+	KEY_HASH_AUTH                = "KEY_HASH_AUTH"
+	KEY_HASH_MEMBER              = "KEY_HASH_MEMBER"
+	KEY_HASH_PASSWORD            = "KEY_HASH_PASSWORD"
+	GOOGLE_CALLBACK_LOGIN_URL    = "GOOGLE_LOGIN_URL"
+	GOOGLE_CALLBACK_REGISTER_URL = "GOOGLE_REGISTER_URL"
+	GOOGLE_CLIENT_ID             = "GOOGLE_CLIENT_ID"
+	GOOGLE_CLIENT_SECRET         = "GOOGLE_CLIENT_SECRET"
+	REDIS_CACHE_ADDR             = "REDIS_CACHE_ADDR"
+	REDIS_CACHE_PASSWORD         = "REDIS_CACHE_PASSWORD"
+	REDIS_CACHE_DB               = "REDIS_CACHE_DB"
+	DEFAULT_AES_IV               = "DEFAULT_AES_IV"
+	DEFAULT_GOOGLE_STATE         = "DEFAULT_GOOGLE_STATE"
+	BEARER_TOKEN_EXP             = "BEARER_TOKEN_EXP"
 )
 
 // Server Config
@@ -60,8 +56,10 @@ func SetConfig() error {
 		KeyHashPassword: getEnv(KEY_HASH_PASSWORD, "default_hash_key"),
 
 		// Google OAuth
-		GoogleLoginRedirectURL:    getEnv(GOOGLE_LOGIN_URL, "http://localhost:8080/member/auth/google/callback/login"),
-		GoogleRegisterRedirectURL: getEnv(GOOGLE_REGISTER_URL, "http://localhost:8080/member/auth/google/callback/register"),
+		// GoogleLoginRedirectURL:    getEnv(GOOGLE_LOGIN_URL, "http://localhost:8080/member/auth/google/callback/login"),
+		// GoogleRegisterRedirectURL: getEnv(GOOGLE_REGISTER_URL, "http://localhost:8080/member/auth/google/callback/register"),
+		GoogleCallbackLoginURL:    getEnv(GOOGLE_CALLBACK_LOGIN_URL, "http://localhost:8080/callback/google/login"),
+		GoogleCallbackRegisterURL: getEnv(GOOGLE_CALLBACK_REGISTER_URL, "http://localhost:8080/callback/google/register"),
 		GoogleClinentID:           getEnv(GOOGLE_CLIENT_ID, "1030829763252-hngbodu9d2vqu2c82n80f86gl8urtq5n.apps.googleusercontent.com"),
 		GoogleClientSecret:        getEnv(GOOGLE_CLIENT_SECRET, "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"),
 
@@ -81,38 +79,15 @@ func SetConfig() error {
 	fmt.Println("config.TokenExpired ", config.BearerTokenExp)
 	fmt.Println("config.DefaultAESIV ", config.DefaultAESIV)
 	fmt.Println("config.RedisCacheDB ", config.RedisCacheDB)
+	fmt.Println("config.DefaultGoogleState ", config.DefaultGoogleState)
+	fmt.Println("config.GoogleLoginRedirectURL ", config.GoogleCallbackLoginURL)
+	fmt.Println("config.GoogleRegisterRedirectURL ", config.GoogleCallbackRegisterURL)
 
 	return nil
 }
 
 func LoadConfig() domain.InternalConfig {
 	return *config
-}
-
-// Google Config
-func GoogleConfig(typeRedirect string) (*domain.GoogleOAuth, error) {
-	config := LoadConfig()
-	var redirectURL string
-	switch typeRedirect {
-	case "LOGIN":
-		redirectURL = config.GoogleLoginRedirectURL
-	case "REGISTER":
-		redirectURL = config.GoogleRegisterRedirectURL
-	default:
-		redirectURL = strings.ToUpper(typeRedirect)
-	}
-	fmt.Println("Redirect URL:", redirectURL)
-	googleOAuth.Config = &oauth2.Config{
-		RedirectURL:  redirectURL,
-		ClientID:     config.GoogleClinentID,
-		ClientSecret: config.GoogleClientSecret,
-		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
-		},
-		Endpoint: google.Endpoint,
-	}
-	return googleOAuth, nil
 }
 
 // Other Function
@@ -144,43 +119,3 @@ func getEnv[T any](keyEnv string, defaultVal T) T {
 	}
 	return defaultVal
 }
-
-// func getEnvStr(keyEnv string, defaultVal string) string {
-// 	value := os.Getenv(keyEnv)
-// 	if value != "" {
-// 		return value
-// 	}
-// 	return defaultVal
-// }
-
-// func getEnvInt(keyEnv string, defaultVal int) int {
-// 	value := os.Getenv(keyEnv)
-// 	if value != "" {
-// 		num, err := strconv.Atoi(value)
-// 		if err != nil {
-// 			log.Fatalln("Failed to convert string to int: " + err.Error())
-// 		}
-// 		return num
-// 	}
-// 	return defaultVal
-// }
-
-// func getEnvByt(keyEnv string, defaultVal []byte) []byte {
-// 	value := os.Getenv(keyEnv)
-// 	if value != "" {
-// 		return []byte(value)
-// 	}
-// 	return defaultVal
-// }
-
-// func getEnvDur(keyEnv string, defaultVal time.Duration) time.Duration {
-// 	value := os.Getenv(keyEnv)
-// 	if value != "" {
-// 		num, err := strconv.Atoi(value)
-// 		if err != nil {
-// 			log.Fatalln("Failed to convert string to int: " + err.Error())
-// 		}
-// 		return time.Duration(num) * time.Minute
-// 	}
-// 	return defaultVal
-// }

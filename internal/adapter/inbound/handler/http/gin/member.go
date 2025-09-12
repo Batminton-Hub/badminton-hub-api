@@ -3,123 +3,47 @@ package gin
 import (
 	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/internal/core/port"
-	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-type MemberControllerImpl struct {
-	MemberUtil port.MemberService
+type MemberController interface {
+	GetProfile(c *gin.Context)
+	UpdateProfile(c *gin.Context)
 }
 
-func (m *MemberControllerImpl) RegisterMember(c *gin.Context) {
-	var httpStatus int
-	var response domain.ResponseRegisterMember
-	var registerForm domain.RegisterForm
-	platform := c.GetString("platform")
+type Member struct {
+	member port.MemberService
+}
 
-	switch platform {
-	case "GOOGLE":
-		responseGoogle, ok := c.Get("response")
-		if !ok {
-			RespError(c, http.StatusBadRequest, domain.ErrInvalidInput.Code, domain.ErrInvalidInput.Msg)
-			return
-		}
-		httpStatus, response = m.MemberUtil.GoogleRegister(responseGoogle)
-	default:
-		if err := c.ShouldBind(&registerForm); err != nil {
-			RespError(c, http.StatusBadRequest, domain.ErrInvalidInput.Code, domain.ErrInvalidInput.Msg)
-			return
-		}
-		httpStatus, response = m.MemberUtil.RegisterMember(registerForm)
+func (m *Member) GetProfile(c *gin.Context) {
+	userID := getUserID(c)
+	userInfo := domain.ReqGetProfile{
+		UserID: userID,
 	}
 
-	if httpStatus != http.StatusOK {
-		RespError(c, httpStatus, response.Code, response.Message)
+	httpStatus, response := m.member.GetProfile(userInfo)
+	if response.Resp.Status == domain.ERROR {
+		Resp(c, httpStatus, response.Resp.Code, response.Resp.Msg, nil)
 		return
 	}
-	RespSuccess(c, httpStatus, response)
+	Resp(c, httpStatus, response.Resp.Code, response.Resp.Msg, response.Member)
 }
 
-func (m *MemberControllerImpl) Login(c *gin.Context) {
-	var httpStatus int
-	var response domain.ResponseLogin
-	var loginForm domain.LoginForm
-	platform := c.GetString("platform")
-
-	switch platform {
-	case "GOOGLE":
-		responseGoogle, ok := c.Get("response")
-		if !ok {
-			RespError(c, http.StatusBadRequest, domain.ErrInvalidInput.Code, domain.ErrInvalidInput.Msg)
-			return
-		}
-		httpStatus, response = m.MemberUtil.GoogleLogin(responseGoogle)
-	default:
-		if err := c.ShouldBind(&loginForm); err != nil {
-			RespError(c, http.StatusBadRequest, domain.ErrInvalidInput.Code, domain.ErrInvalidInput.Msg)
-			return
-		}
-		httpStatus, response = m.MemberUtil.Login(loginForm)
+func (m *Member) UpdateProfile(c *gin.Context) {
+	userInfo := domain.ReqGetProfile{
+		UserID: getUserID(c),
 	}
-
-	if httpStatus != http.StatusOK {
-		RespError(c, httpStatus, response.Code, response.Message)
-		return
-	}
-	RespSuccess(c, httpStatus, response)
-}
-
-func (m *MemberControllerImpl) GetProfile(c *gin.Context) {
-	userID := c.GetString("user_id")
-	fmt.Println("userID", userID)
-	httpStatus, response := m.MemberUtil.GetProfile(userID)
-	if httpStatus != http.StatusOK {
-		RespError(c, httpStatus, response.Code, response.Message)
+	request := domain.ReqUpdateProfile{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		Resp(c, domain.ErrInvalidInput.Code, domain.ErrInvalidInput.Code, domain.ErrInvalidInput.Msg, nil)
 		return
 	}
 
-	RespSuccess(c, httpStatus, response)
-}
-
-func (m *MemberControllerImpl) UpdateProfile(c *gin.Context) {
-	userID := c.GetString("user_id")
-	fmt.Println("userID", userID)
-	var request domain.RequestUpdateProfile
-	if err := c.ShouldBind(&request); err != nil {
-		RespError(c, http.StatusBadRequest, domain.ErrInvalidInput.Code, domain.ErrInvalidInput.Msg)
+	httpStatus, response := m.member.UpdateProfile(userInfo, request)
+	if response.Resp.Status == domain.ERROR {
+		Resp(c, httpStatus, response.Resp.Code, response.Resp.Msg, nil)
 		return
 	}
-
-	httpStatus, response := m.MemberUtil.UpdateProfile(userID, request)
-	if httpStatus != http.StatusOK {
-		RespError(c, httpStatus, response.Code, response.Message)
-		return
-	}
-
-	RespSuccess(c, httpStatus, response)
-}
-
-type RedirectControllerImpl struct {
-	RedirectUtil port.RedirectUtil
-}
-
-func (m *RedirectControllerImpl) GoogleLogin(c *gin.Context) {
-	httpStatus, response := m.RedirectUtil.GoogleLogin()
-	if response.Code != 0 {
-		RespError(c, httpStatus, response.Code, response.Message)
-		return
-	}
-	c.Redirect(httpStatus, response.URL)
-}
-
-func (m *RedirectControllerImpl) GoogleRegister(c *gin.Context) {
-	httpStatus, response := m.RedirectUtil.GoogleRegister()
-	if response.Code != 0 {
-		RespError(c, httpStatus, response.Code, response.Message)
-		return
-	}
-
-	c.Redirect(httpStatus, response.URL)
+	Resp(c, httpStatus, response.Resp.Code, response.Resp.Msg, nil)
 }

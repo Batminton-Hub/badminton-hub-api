@@ -25,12 +25,7 @@ type Member struct {
 	Region       string    `json:"region" bson:"region"`                               // Region or country
 	Permission   []string  `json:"permission,omitempty" bson:"permission,omitempty"`   // Permission
 	GoogleID     string    `json:"google_id" bson:"google_id"`                         // Google ID
-	// Address     Address   `json:"address"`      // Address details
-}
-
-type HashMember struct {
-	Email    string
-	Username string
+	Address      Address   `json:"address,omitempty" bson:"address,omitempty"`         // Address details
 }
 
 type Address struct {
@@ -49,12 +44,6 @@ type RegisterForm struct {
 	Gender   string `json:"gender" binding:"required"`         // เพศ
 }
 
-type ResponseRegisterMember struct {
-	BearerToken string `json:"bearer_token,omitempty"`
-	Code        int    `json:"code,omitempty"`
-	Message     string `json:"message,omitempty"`
-}
-
 // Login Structure
 type LoginForm struct {
 	Email      string `json:"email" binding:"required,email"`    // email
@@ -63,57 +52,16 @@ type LoginForm struct {
 	PlatformID string `json:"platform_id"`                       // platform id
 }
 
-type ResponseLogin struct {
-	BearerToken string `json:"bearer_token,omitempty"`
-	Code        int    `json:"code,omitempty"`
-	Message     string `json:"message,omitempty"`
+// Profile Request and Response
+type ReqGetProfile struct {
+	UserID string
+}
+type RespGetProfile struct {
+	Member Member `json:"member,omitempty"`
+	Resp   Resp   `json:"resp,omitempty"`
 }
 
-type ResponseRedirectGoogleLogin struct {
-	URL     string `json:"url,omitempty"`
-	Code    int    `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-}
-
-type ResponseRedirectGoogleRegister struct {
-	URL     string `json:"url,omitempty"`
-	Code    int    `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-}
-
-type ResponseGoogleLoginCallback struct {
-	UserInfo     GoogleUserInfo `json:"user_info,omitempty"`
-	AccessToken  string         `json:"access_token,omitempty"`
-	RefreshToken string         `json:"refresh_token,omitempty"`
-	Code         int            `json:"code,omitempty"`
-	Message      string         `json:"message,omitempty"`
-}
-
-type ResponseGoogleRegisterCallback struct {
-	UserInfo     GoogleUserInfo `json:"user_info,omitempty"`
-	AccessToken  string         `json:"access_token,omitempty"`
-	RefreshToken string         `json:"refresh_token,omitempty"`
-	Code         int            `json:"code,omitempty"`
-	Message      string         `json:"message,omitempty"`
-}
-
-type GoogleUserInfo struct {
-	Email         string `json:"email"`
-	GivenName     string `json:"given_name"`
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Picture       string `json:"picture"`
-	VerifiedEmail bool   `json:"verified_email"`
-}
-
-// Profile
-type ResponseGetProfile struct {
-	Code    int    `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-	Member  Member `json:"member,omitempty"`
-}
-
-type RequestUpdateProfile struct {
+type ReqUpdateProfile struct {
 	DisplayName  string   `json:"display_name,omitempty" bson:"display_name,omitempty"`
 	ProfileImage string   `json:"profile_image,omitempty" bson:"profile_image,omitempty"`
 	DateOfBirth  string   `json:"date_of_birth,omitempty" bson:"date_of_birth,omitempty" binding:"omitempty,datetime=2006-01-02"`
@@ -121,9 +69,10 @@ type RequestUpdateProfile struct {
 	Gender       string   `json:"gender,omitempty" bson:"gender,omitempty"`
 	Phone        string   `json:"phone,omitempty" bson:"phone,omitempty" binding:"omitempty,numeric,min=10,max=10"`
 	Tag          []string `json:"tag,omitempty" bson:"tag,omitempty"`
+	Status       string   `json:"status,omitempty" bson:"status,omitempty"`
 }
 
-type ResponseUpdateProfile struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+type RespUpdateProfile struct {
+	Member Member `json:"member,omitempty"`
+	Resp   Resp   `json:"resp,omitempty"`
 }

@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -193,7 +194,7 @@ func DecryptGOB(data []byte, body any) error {
 func randomIV() ([]byte, error) {
 	config := LoadConfig()
 
-	if config.Mode == "DEVERLOP" {
+	if strings.Contains(domain.DEVERLOP, config.Mode) {
 		return config.DefaultAESIV, nil
 	}
 	iv := make([]byte, aes.BlockSize)

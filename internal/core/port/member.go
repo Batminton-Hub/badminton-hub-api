@@ -6,30 +6,17 @@ import (
 )
 
 type MemberService interface {
-	MemberUtil
 	ProfileUtil
 }
 
-type MemberUtil interface {
-	RegisterMember(registerForm domain.RegisterForm) (int, domain.ResponseRegisterMember)
-	Login(loginForm domain.LoginForm) (int, domain.ResponseLogin)
-	GoogleRegister(responseGoogle any) (int, domain.ResponseRegisterMember)
-	GoogleLogin(responseGoogle any) (int, domain.ResponseLogin)
-}
-
 type ProfileUtil interface {
-	GetProfile(userID string) (int, domain.ResponseGetProfile)
-	UpdateProfile(userID string, request domain.RequestUpdateProfile) (int, domain.ResponseUpdateProfile)
-}
-
-type RedirectUtil interface {
-	GoogleLogin() (int, domain.ResponseRedirectGoogleLogin)
-	GoogleRegister() (int, domain.ResponseRedirectGoogleRegister)
+	GetProfile(userID domain.ReqGetProfile) (int, domain.RespGetProfile)
+	UpdateProfile(userID domain.ReqGetProfile, request domain.ReqUpdateProfile) (int, domain.RespUpdateProfile)
 }
 
 type MemberRepo interface {
 	SaveMember(ctx context.Context, member domain.Member) error
 	FindEmailMember(ctx context.Context, email string) (domain.Member, error)
 	GetMemberByUserID(ctx context.Context, userID string) (domain.Member, error)
-	UpdateMember(ctx context.Context, userID string, request domain.RequestUpdateProfile) error
+	UpdateMember(ctx context.Context, userID string, request domain.ReqUpdateProfile) error
 }

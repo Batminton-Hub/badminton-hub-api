@@ -13,17 +13,6 @@ import (
 
 var srv *http.Server
 
-func HttpServer(handler http.Handler) *http.Server {
-	config := LoadConfig()
-	srv = &http.Server{
-		Addr:    config.ServerPort,
-		Handler: handler,
-	}
-
-	fmt.Println("Server port:", config.ServerPort)
-	return srv
-}
-
 func ShutdownServer() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -38,4 +27,24 @@ func ShutdownServer() {
 	}
 
 	fmt.Println("Server exited gracefully")
+}
+
+func HttpServer(handler http.Handler) *http.Server {
+	config := LoadConfig()
+	srv = &http.Server{
+		Addr:    config.ServerPort,
+		Handler: handler,
+	}
+
+	fmt.Println("Server port:", config.ServerPort)
+	return srv
+}
+
+func RunServer(handler http.Handler) {
+	srv := HttpServer(handler)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal("Listen error:", err)
+		}
+	}()
 }

@@ -2,36 +2,41 @@ package gin
 
 import (
 	"Badminton-Hub/util"
-	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (m *MainRoute) RouteMember() {
-	member := m.Engine.Group("/member")
-	{
-		member.POST("/register", m.MemberController.RegisterMember)
-		member.POST("/login", m.MemberController.Login)
-		member.GET("/google/login", m.RedirectController.GoogleLogin)
-		member.GET("/google/register", m.RedirectController.GoogleRegister)
-		member.GET("/auth/google/callback/login", m.MiddlewareController.GoogleLoginCallback, m.MemberController.Login)
-		member.GET("/auth/google/callback/register", m.MiddlewareController.GoogleRegisterCallback, m.MemberController.RegisterMember)
-
-		member.GET("/profile", m.MiddlewareController.Authenticate, m.MemberController.GetProfile)
-		member.PATCH("/profile", m.MiddlewareController.Authenticate, m.MemberController.UpdateProfile)
-	}
-}
+var engine *gin.Engine
 
 func (m *MainRoute) Start() {
-	m.Engine = gin.Default()
+	engine = gin.Default()
 }
 
 func (m *MainRoute) Run() {
-	srv := util.HttpServer(m.Engine)
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("Listen error:", err)
-		}
-	}()
+	util.RunServer(engine)
+}
+
+func (m *MainRoute) RouteAuthenticationSystem() {
+	authentication := engine.Group("/authentication")
+	authentication.POST("/login", m.authentication.Login)
+	authentication.POST("/register", m.authentication.Register)
+}
+
+func (m *MainRoute) RouteRedirect() {
+	redirect := engine.Group("/redirect")
+	redirect.GET("/:platform/login", m.redirect.Login)
+	redirect.GET("/:platform/register", m.redirect.Register)
+}
+
+func (m *MainRoute) RouteCallback() {
+	callback := engine.Group("/callback")
+	callback.GET("/:platform/login", m.authentication.MiddleWare, m.authentication.Login)
+	callback.GET("/:platform/register", m.authentication.MiddleWare, m.authentication.Register)
+}
+
+func (m *MainRoute) RouteMember() {
+	member := engine.Group("/member")
+	member.Use(m.authentication.MiddleWare)
+	member.GET("/profile", m.member.GetProfile)
+	member.PATCH("/profile", m.member.UpdateProfile)
 }

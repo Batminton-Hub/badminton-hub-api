@@ -1,4 +1,4 @@
-package mongodb
+package mongoDB
 
 import (
 	"Badminton-Hub/util"
@@ -17,7 +17,6 @@ type MongoDB struct {
 	Cancel   context.CancelFunc
 }
 
-// func NewMongoDB() port.DatabaseService {
 func NewMongoDB(dbName string) *MongoDB {
 	config := util.LoadConfig()
 	client, err := mongo.Connect(options.Client().ApplyURI(config.MongoDBURL))
@@ -34,8 +33,8 @@ func NewMongoDB(dbName string) *MongoDB {
 }
 
 func (db *MongoDB) CloseDB() {
-	defer db.Cancel()
 	if err := db.Client.Disconnect(db.Ctx); err != nil {
 		panic(err)
 	}
+	db.Cancel()
 }
