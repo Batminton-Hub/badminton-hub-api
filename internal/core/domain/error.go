@@ -48,7 +48,8 @@ var (
 
 	// Request
 	ErrInvalidInput       = errorNew(1001, "Invalid input", http.StatusBadRequest)        // ข้อมูลไม่ถูกต้อง
-	ErrPlatformNotSupport = errorNew(1002, "Platform not support", http.StatusBadRequest) // ระบบไม่รองรับ Platform นี้
+	ErrPlatformNotSupport = errorNew(1002, "Platform not support", http.StatusBadRequest) // ระบบไม่รองรับ Platform
+	ErrSystemNotSupport   = errorNew(1003, "System not support", http.StatusBadRequest)   // ระบบไม่รองรับ System
 
 	// Member
 	ErrMemberRegisterFailDuplicateEmail = errorNew(2000, "Register member failed: duplicate email", http.StatusBadRequest)
@@ -74,9 +75,7 @@ var (
 
 	// General
 	ErrActionNotSupport = errorNew(5000, "Action not support", http.StatusInternalServerError)
-)
 
-type ResponseError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
+	// Third Party
+	ErrInvalidDecode3rdPartyForm = errorNew(6000, "Invalid decode 3rd party form", http.StatusBadRequest)
+)

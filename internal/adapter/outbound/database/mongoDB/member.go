@@ -3,7 +3,6 @@ package mongoDB
 import (
 	"Badminton-Hub/internal/core/domain"
 	"context"
-	"fmt"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -43,7 +42,6 @@ func (db *MongoDB) FindEmailMember(ctx context.Context, email string) (domain.Me
 	}
 	err := collection.FindOne(ctx, filter).Decode(&member)
 	if err != nil {
-		fmt.Println("Error finding member:", err)
 		if err == mongo.ErrNoDocuments {
 			return member, domain.ErrMemberEmailNotFound.Err
 		}
@@ -81,6 +79,11 @@ func (db *MongoDB) UpdateMember(ctx context.Context, userID string, request doma
 	filter := bson.M{
 		"user_id": userID,
 	}
+
+	if request.Gender != "" {
+		request.Status = domain.ACTIVE
+	}
+
 	update := bson.M{
 		"$set": request,
 	}

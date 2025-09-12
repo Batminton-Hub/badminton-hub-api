@@ -25,13 +25,8 @@ type Member struct {
 	Region       string    `json:"region" bson:"region"`                               // Region or country
 	Permission   []string  `json:"permission,omitempty" bson:"permission,omitempty"`   // Permission
 	GoogleID     string    `json:"google_id" bson:"google_id"`                         // Google ID
-	// Address     Address   `json:"address"`      // Address details
+	Address      Address   `json:"address,omitempty" bson:"address,omitempty"`         // Address details
 }
-
-// type HashMember struct {
-// 	Email    string
-// 	Username string
-// }
 
 type Address struct {
 	Home    string `json:"home"`     // บ้าน
@@ -49,12 +44,6 @@ type RegisterForm struct {
 	Gender   string `json:"gender" binding:"required"`         // เพศ
 }
 
-// type ResponseRegisterMember struct {
-// 	BearerToken string `json:"bearer_token,omitempty"`
-// 	Code        int    `json:"code,omitempty"`
-// 	Message     string `json:"message,omitempty"`
-// }
-
 // Login Structure
 type LoginForm struct {
 	Email      string `json:"email" binding:"required,email"`    // email
@@ -63,48 +52,7 @@ type LoginForm struct {
 	PlatformID string `json:"platform_id"`                       // platform id
 }
 
-type ResponseLogin struct {
-	BearerToken string `json:"bearer_token,omitempty"`
-	Code        int    `json:"code,omitempty"`
-	Message     string `json:"message,omitempty"`
-}
-
-// type ResponseRedirectGoogleLogin struct {
-// 	URL     string `json:"url,omitempty"`
-// 	Code    int    `json:"code,omitempty"`
-// 	Message string `json:"message,omitempty"`
-// }
-
-// type ResponseRedirectGoogleRegister struct {
-// 	URL     string `json:"url,omitempty"`
-// 	Code    int    `json:"code,omitempty"`
-// 	Message string `json:"message,omitempty"`
-// }
-
-type ResponseGoogleLoginCallback struct {
-	UserInfo     GoogleUserInfo `json:"user_info,omitempty"`
-	AccessToken  string         `json:"access_token,omitempty"`
-	RefreshToken string         `json:"refresh_token,omitempty"`
-	Code         int            `json:"code,omitempty"`
-	Message      string         `json:"message,omitempty"`
-}
-
-type GoogleMemberInfo struct {
-	UserInfo     GoogleUserInfo `json:"user_info,omitempty"`
-	AccessToken  string         `json:"access_token,omitempty"`
-	RefreshToken string         `json:"refresh_token,omitempty"`
-}
-
-type GoogleUserInfo struct {
-	Email         string `json:"email"`
-	GivenName     string `json:"given_name"`
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Picture       string `json:"picture"`
-	VerifiedEmail bool   `json:"verified_email"`
-}
-
-// Profile
+// Profile Request and Response
 type ReqGetProfile struct {
 	UserID string
 }
@@ -121,6 +69,7 @@ type ReqUpdateProfile struct {
 	Gender       string   `json:"gender,omitempty" bson:"gender,omitempty"`
 	Phone        string   `json:"phone,omitempty" bson:"phone,omitempty" binding:"omitempty,numeric,min=10,max=10"`
 	Tag          []string `json:"tag,omitempty" bson:"tag,omitempty"`
+	Status       string   `json:"status,omitempty" bson:"status,omitempty"`
 }
 
 type RespUpdateProfile struct {

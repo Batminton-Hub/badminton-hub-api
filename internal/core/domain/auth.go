@@ -28,12 +28,14 @@ type LoginInfo struct {
 	Platform     string
 	PlatformData any
 	LoginForm    LoginForm
+	TypeSystem   string
 }
 
 type RegisterInfo struct {
 	Platform     string
 	PlatformData any
 	RegisterForm RegisterForm
+	TypeSystem   string
 }
 
 type AuthInfo struct {
@@ -42,6 +44,7 @@ type AuthInfo struct {
 	Code        string
 	Action      string
 	Platform    string
+	TypeSystem  string
 }
 
 type RespAuth struct {

@@ -10,8 +10,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const testVar = "testVal"
-
 type GoogleRedirect struct {
 	cache port.CacheUtil
 }
@@ -30,7 +28,7 @@ func (g *GoogleRedirect) Login(info domain.RedirectLoginInfo) (int, domain.RespR
 
 	var response domain.RespRedirect
 	var redirectURL string
-	googleConfig, err := util.GoogleConfig(domain.LOGIN)
+	googleConfig, err := GoogleConfig(domain.LOGIN)
 	if err != nil {
 		response.Resp = domain.ErrLoadConfig
 		return response.Resp.HttpStatus, response
@@ -64,7 +62,7 @@ func (g *GoogleRedirect) Register(info domain.RedirectLoginInfo) (int, domain.Re
 
 	var response domain.RespRedirect
 	var redirectURL string
-	googleConfig, err := util.GoogleConfig(domain.REGISTER)
+	googleConfig, err := GoogleConfig(domain.REGISTER)
 	if err != nil {
 		response.Resp = domain.ErrLoadConfig
 		return response.Resp.HttpStatus, response

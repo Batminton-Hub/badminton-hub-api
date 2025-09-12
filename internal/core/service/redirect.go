@@ -6,41 +6,21 @@ import (
 )
 
 type Redirect struct {
-	Google port.AuthenticationRedirect
+	thirdParty port.RedirectService
 }
 
 func NewRedirect(
-	google port.RedirectService,
+	thirdParty port.RedirectService,
 ) *Redirect {
 	return &Redirect{
-		Google: google,
+		thirdParty: thirdParty,
 	}
 }
 
 func (m *Redirect) Login(info domain.RedirectLoginInfo) (int, domain.RespRedirect) {
-	var response domain.RespRedirect
-	var redirect port.AuthenticationRedirect
-	switch info.Platform {
-	case domain.GOOGLE:
-		redirect = m.Google
-	default:
-		response.Resp = domain.ErrPlatformNotSupport
-		return response.Resp.HttpStatus, response
-	}
-
-	return redirect.Login(info)
+	return m.thirdParty.Login(info)
 }
 
 func (m *Redirect) Register(info domain.RedirectLoginInfo) (int, domain.RespRedirect) {
-	var response domain.RespRedirect
-	var redirect port.AuthenticationRedirect
-	switch info.Platform {
-	case domain.GOOGLE:
-		redirect = m.Google
-	default:
-		response.Resp = domain.ErrPlatformNotSupport
-		return response.Resp.HttpStatus, response
-	}
-
-	return redirect.Register(info)
+	return m.thirdParty.Register(info)
 }

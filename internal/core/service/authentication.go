@@ -10,20 +10,30 @@ import (
 )
 
 type AuthenticationService struct {
+	thirdPartyUtil port.ThirdPartyUtil
 	memberRepo     port.MemberRepo
 	encryption     port.EncryptionUtil
 	middlewareUtil port.MiddlewareUtil
 }
 
-type MiddlewareService struct {
-	memberRepo port.MemberRepo
+type AuthenticateService struct {
+	thirdParty     port.AuthenticateUtil
+	middlewareUtil port.MiddlewareUtil
+	memberRepo     port.MemberRepo
+}
+
+type MiddlewareUtil struct {
 	encryption port.EncryptionUtil
-	callback   port.CallbackService
 }
 
 type AuthenticationSystem struct {
 	port.AuthenticationService
 	port.MiddlewareService
+}
+
+type MiddlewareSystem struct {
+	port.AuthenticateUtil
+	port.MiddlewareUtil
 }
 
 func NewAuthenticationSystem(
@@ -39,22 +49,42 @@ func NewAuthenticationSystem(
 func NewAuthenticationService(
 	memberRepo port.MemberRepo,
 	middlewareUtil port.MiddlewareUtil,
+	thirdPartyUtil port.ThirdPartyUtil,
 ) *AuthenticationService {
 	return &AuthenticationService{
 		memberRepo:     memberRepo,
 		middlewareUtil: middlewareUtil,
+		thirdPartyUtil: thirdPartyUtil,
 	}
 }
 
-func NewMiddlewareService(
+func NewAuthenticateService(
+	thirdParty port.AuthenticateUtil,
+	middlewareUtil port.MiddlewareUtil,
 	memberRepo port.MemberRepo,
+) *AuthenticateService {
+	return &AuthenticateService{
+		thirdParty:     thirdParty,
+		middlewareUtil: middlewareUtil,
+		memberRepo:     memberRepo,
+	}
+}
+
+func NewMiddlewareUtil(
 	encryption port.EncryptionUtil,
-	callback *CallbackService,
-) *MiddlewareService {
-	return &MiddlewareService{
-		memberRepo: memberRepo,
+) *MiddlewareUtil {
+	return &MiddlewareUtil{
 		encryption: encryption,
-		callback:   callback,
+	}
+}
+
+func NewMiddlewareSystem(
+	middlewareService port.AuthenticateUtil,
+	middlewareUtil port.MiddlewareUtil,
+) *MiddlewareSystem {
+	return &MiddlewareSystem{
+		middlewareService,
+		middlewareUtil,
 	}
 }
 
@@ -63,13 +93,15 @@ func (a *AuthenticationService) Login(loginInfo domain.LoginInfo) (int, domain.R
 	defer cancel()
 
 	response := domain.RespLogin{}
-	platformUtil, err := core_util.SwitchPlatform(loginInfo.Platform, ctx, a.memberRepo, a.middlewareUtil)
-	if err != nil {
-		response.Resp = domain.ErrPlatformNotSupport
+	switch loginInfo.TypeSystem {
+	case domain.SYSTEM:
+		return core_util.Login(loginInfo, ctx, a.memberRepo, a.middlewareUtil)
+	case domain.THIRD_PARTY:
+		return core_util.LoginThirdParty(loginInfo, ctx, a.memberRepo, a.middlewareUtil, a.thirdPartyUtil)
+	default:
+		response.Resp = domain.ErrSystemNotSupport
 		return response.Resp.HttpStatus, response
 	}
-
-	return platformUtil.Login(loginInfo)
 }
 
 func (a *AuthenticationService) Register(registerInfo domain.RegisterInfo) (int, domain.RespRegister) {
@@ -77,36 +109,31 @@ func (a *AuthenticationService) Register(registerInfo domain.RegisterInfo) (int,
 	defer cancel()
 
 	response := domain.RespRegister{}
-	platformUtil, err := core_util.SwitchPlatform(registerInfo.Platform, ctx, a.memberRepo, a.middlewareUtil)
-	if err != nil {
-		response.Resp = domain.ErrPlatformNotSupport
+	switch registerInfo.TypeSystem {
+	case domain.SYSTEM:
+		return core_util.Register(registerInfo, ctx, a.memberRepo, a.middlewareUtil)
+	case domain.THIRD_PARTY:
+		return core_util.RegisterThirdParty(registerInfo, ctx, a.memberRepo, a.middlewareUtil, a.thirdPartyUtil)
+	default:
+		response.Resp = domain.ErrSystemNotSupport
 		return response.Resp.HttpStatus, response
 	}
-
-	return platformUtil.Register(registerInfo)
 }
 
-func (m *MiddlewareService) Authenticate(info domain.AuthInfo) (int, domain.RespAuth) {
-	ctx, cancel := util.InitConText(2 * time.Second)
-	defer cancel()
-
+func (m *AuthenticateService) Authenticate(info domain.AuthInfo) (int, domain.RespAuth) {
 	var response domain.RespAuth
-	var platformUtil core_util.PlatformUtil
-	platform := info.Platform
-	switch platform {
-	case domain.NORMAL:
-		platformUtil = core_util.NewNomalPlatform(ctx, m.memberRepo, m)
-	case domain.GOOGLE:
-		platformUtil = core_util.NewGooglePlatform(ctx, m.memberRepo, m, m.callback)
+	switch info.TypeSystem {
+	case domain.SYSTEM:
+		return core_util.Authenticate(info, m.middlewareUtil)
+	case domain.THIRD_PARTY:
+		return m.thirdParty.Authenticate(info)
 	default:
-		response.Resp = domain.ErrPlatformNotSupport
-		return domain.ErrPlatformNotSupport.HttpStatus, response
+		response.Resp = domain.ErrSystemNotSupport
+		return response.Resp.HttpStatus, response
 	}
-
-	return platformUtil.Authenticate(info)
 }
 
-func (m *MiddlewareService) ValidateBearerToken(tokenObj domain.BearerToken) (domain.AuthBody, error) {
+func (m *MiddlewareUtil) ValidateBearerToken(tokenObj domain.BearerToken) (domain.AuthBody, error) {
 	config := util.LoadConfig()
 
 	token := tokenObj.Token[len("Bearer "):] // Remove "Bearer " prefix
@@ -124,7 +151,7 @@ func (m *MiddlewareService) ValidateBearerToken(tokenObj domain.BearerToken) (do
 	return authBody, nil
 }
 
-func (m *MiddlewareService) GenBearerToken(hashBody domain.HashAuth) (domain.BearerToken, error) {
+func (m *MiddlewareUtil) GenBearerToken(hashBody domain.HashAuth) (domain.BearerToken, error) {
 	response := domain.BearerToken{}
 	var token string
 	config := util.LoadConfig()

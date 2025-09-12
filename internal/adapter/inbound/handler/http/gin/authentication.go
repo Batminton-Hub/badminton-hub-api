@@ -19,9 +19,11 @@ type AuthenticationSystem struct {
 }
 
 func (a *AuthenticationSystem) Login(c *gin.Context) {
+	platform := getPlatform(c)
 	loginInfo := domain.LoginInfo{
-		Platform:     getPlatform(c),
+		Platform:     platform,
 		PlatformData: getPlatformData(c),
+		TypeSystem:   getTypeSystem(platform),
 	}
 
 	loginForm := domain.LoginForm{}
@@ -37,13 +39,15 @@ func (a *AuthenticationSystem) Login(c *gin.Context) {
 }
 
 func (a *AuthenticationSystem) Register(c *gin.Context) {
+	platform := getPlatform(c)
 	registerInfo := domain.RegisterInfo{
-		Platform:     getPlatform(c),
+		Platform:     platform,
 		PlatformData: getPlatformData(c),
+		TypeSystem:   getTypeSystem(platform),
 	}
 	registerForm := domain.RegisterForm{}
 	err := c.ShouldBindJSON(&registerForm)
-	if err != nil {
+	if err != nil && registerInfo.PlatformData == nil {
 		RespAuth(c, http.StatusBadRequest, domain.ErrInvalidInput.Code, domain.ErrInvalidInput.Msg, "")
 		return
 	}
@@ -60,11 +64,15 @@ func (a *AuthenticationSystem) MiddleWare(c *gin.Context) {
 		BearerToken: domain.BearerToken{
 			Token: getBearerToken(c),
 		},
-		State:    getState(c),
-		Code:     getCode(c),
-		Action:   getAction(c),
-		Platform: platform,
+		State:      getState(c),
+		Code:       getCode(c),
+		Action:     getAction(c),
+		TypeSystem: getTypeSystem(platform),
+		Platform:   platform,
 	}
+
+	authInfo.TypeSystem = getTypeSystem(platform)
+
 	httpStatus, response := a.authenticationSystem.Authenticate(authInfo)
 	if response.Resp.Status == domain.ERROR {
 		RespMiddleWare(c, httpStatus, response.Resp.Code, response.Resp.Msg)

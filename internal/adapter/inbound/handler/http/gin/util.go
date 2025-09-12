@@ -14,6 +14,7 @@ func RespAuth(c *gin.Context, httpStaus, code int, message string, bearerToken s
 		BearerToken: bearerToken,
 	}
 	c.JSON(httpStaus, response)
+
 }
 
 func RespMiddleWare(c *gin.Context, httpStatus, code int, message string) {
@@ -36,7 +37,7 @@ func Resp(c *gin.Context, httpStatus, code int, message string, data any) {
 
 func RespRedirect(c *gin.Context, httpStatus, code int, message string, url string) {
 	api := c.Query(domain.API)
-	if api != "" {
+	if strings.ToLower(api) == "true" {
 		Resp(c, httpStatus, code, message, url)
 		return
 	}
@@ -96,6 +97,13 @@ func getAction(c *gin.Context) string {
 
 func getUserID(c *gin.Context) string {
 	return c.GetString(domain.UserID)
+}
+
+func getTypeSystem(platform string) string {
+	if platform == domain.NORMAL {
+		return domain.SYSTEM
+	}
+	return domain.THIRD_PARTY
 }
 
 type RespBody struct {

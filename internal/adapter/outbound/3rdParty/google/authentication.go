@@ -9,28 +9,28 @@ import (
 	"time"
 )
 
-type GoogleCallback struct {
+type GoogleMiddleware struct {
 	cache port.CacheUtil
 }
 
-func NewGoogleCallback(
+func NewGoogleMiddleware(
 	cache port.CacheUtil,
-) *GoogleCallback {
-	return &GoogleCallback{
+) *GoogleMiddleware {
+	return &GoogleMiddleware{
 		cache: cache,
 	}
 }
 
-func (g *GoogleCallback) Authenticate(info domain.AuthInfo) (int, domain.RespAuth) {
+func (g *GoogleMiddleware) Authenticate(info domain.AuthInfo) (int, domain.RespAuth) {
 	ctx, cancel := util.InitConText(10 * time.Second)
 	defer cancel()
 
 	state := info.State
 	code := info.Code
-	platformData := domain.ResponseGoogleLoginCallback{}
+	platformData := GoogleMemberInfo{}
 	response := domain.RespAuth{}
 
-	googleConfig, err := util.GoogleConfig(info.Action)
+	googleConfig, err := GoogleConfig(info.Action)
 	if err != nil {
 		response.Resp = domain.ErrLoadConfig
 		return http.StatusInternalServerError, response
@@ -60,7 +60,7 @@ func (g *GoogleCallback) Authenticate(info domain.AuthInfo) (int, domain.RespAut
 	}
 	defer resp.Body.Close()
 
-	var userInfo domain.GoogleUserInfo
+	var userInfo GoogleUserInfo
 	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
 		response.Resp = domain.ErrInvalidOAuthDecode
 		return http.StatusUnauthorized, response

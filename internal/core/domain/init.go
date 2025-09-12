@@ -5,6 +5,13 @@ const ( // Platform
 	GOOGLE = "GOOGLE"
 )
 
+const ( // Mode
+	DEVERLOP   = "DEVERLOP"
+	UAT        = "UAT"
+	PRODUCTION = "PRODUCTION"
+	TEST       = "TEST"
+)
+
 const ( // Action
 	REGISTER = "REGISTER"
 	LOGIN    = "LOGIN"
@@ -17,6 +24,11 @@ const ( // Status
 	DELETED = "DELETED"
 	SUCCESS = "SUCCESS"
 	ERROR   = "ERROR"
+)
+
+const ( // Type System
+	SYSTEM      = "SYSTEM"
+	THIRD_PARTY = "3RD_PARTY"
 )
 
 const ( // Type Member

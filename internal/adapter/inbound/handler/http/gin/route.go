@@ -6,38 +6,36 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var engine *gin.Engine
+
 func (m *MainRoute) Start() {
-	m.engine = gin.Default()
+	engine = gin.Default()
 }
 
 func (m *MainRoute) Run() {
-	util.RunServer(m.engine)
+	util.RunServer(engine)
 }
 
 func (m *MainRoute) RouteAuthenticationSystem() {
-	r := m.engine
-	authentication := r.Group("/authentication")
+	authentication := engine.Group("/authentication")
 	authentication.POST("/login", m.authentication.Login)
 	authentication.POST("/register", m.authentication.Register)
 }
 
 func (m *MainRoute) RouteRedirect() {
-	r := m.engine
-	redirect := r.Group("/redirect")
+	redirect := engine.Group("/redirect")
 	redirect.GET("/:platform/login", m.redirect.Login)
 	redirect.GET("/:platform/register", m.redirect.Register)
 }
 
 func (m *MainRoute) RouteCallback() {
-	r := m.engine
-	callback := r.Group("/callback")
+	callback := engine.Group("/callback")
 	callback.GET("/:platform/login", m.authentication.MiddleWare, m.authentication.Login)
 	callback.GET("/:platform/register", m.authentication.MiddleWare, m.authentication.Register)
 }
 
 func (m *MainRoute) RouteMember() {
-	r := m.engine
-	member := r.Group("/member")
+	member := engine.Group("/member")
 	member.Use(m.authentication.MiddleWare)
 	member.GET("/profile", m.member.GetProfile)
 	member.PATCH("/profile", m.member.UpdateProfile)
