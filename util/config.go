@@ -56,8 +56,6 @@ func SetConfig() error {
 		KeyHashPassword: getEnv(KEY_HASH_PASSWORD, "default_hash_key"),
 
 		// Google OAuth
-		// GoogleLoginRedirectURL:    getEnv(GOOGLE_LOGIN_URL, "http://localhost:8080/member/auth/google/callback/login"),
-		// GoogleRegisterRedirectURL: getEnv(GOOGLE_REGISTER_URL, "http://localhost:8080/member/auth/google/callback/register"),
 		GoogleCallbackLoginURL:    getEnv(GOOGLE_CALLBACK_LOGIN_URL, "http://localhost:8080/callback/google/login"),
 		GoogleCallbackRegisterURL: getEnv(GOOGLE_CALLBACK_REGISTER_URL, "http://localhost:8080/callback/google/register"),
 		GoogleClinentID:           getEnv(GOOGLE_CLIENT_ID, "1030829763252-hngbodu9d2vqu2c82n80f86gl8urtq5n.apps.googleusercontent.com"),
@@ -76,6 +74,7 @@ func SetConfig() error {
 		BearerTokenExp: getEnv(BEARER_TOKEN_EXP, 5*time.Minute),
 	}
 
+	fmt.Println("MongoDBURL ", config.MongoDBURL)
 	fmt.Println("config.TokenExpired ", config.BearerTokenExp)
 	fmt.Println("config.DefaultAESIV ", config.DefaultAESIV)
 	fmt.Println("config.RedisCacheDB ", config.RedisCacheDB)

@@ -3,6 +3,7 @@ package mongoDB
 import (
 	"Badminton-Hub/util"
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -10,31 +11,36 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
+type CloseMongoDB func()
+
 type MongoDB struct {
 	Database *mongo.Database
 	Client   *mongo.Client
 	Ctx      context.Context
-	Cancel   context.CancelFunc
 }
 
-func NewMongoDB(dbName string) *MongoDB {
+func NewMongoDB() (*MongoDB, CloseMongoDB) {
 	config := util.LoadConfig()
 	client, err := mongo.Connect(options.Client().ApplyURI(config.MongoDBURL))
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	return &MongoDB{
-		Database: client.Database(dbName),
+	defer cancel()
+	mongoDB := &MongoDB{
+		Database: client.Database(config.DBName),
 		Client:   client,
 		Ctx:      ctx,
-		Cancel:   cancel,
 	}
+	closeDB := closeMongoDB(ctx, client)
+	return mongoDB, closeDB
 }
 
-func (db *MongoDB) CloseDB() {
-	if err := db.Client.Disconnect(db.Ctx); err != nil {
-		panic(err)
+func closeMongoDB(ctx context.Context, client *mongo.Client) CloseMongoDB {
+	return func() {
+		fmt.Println("closeMongoDB client")
+		if err := client.Disconnect(ctx); err != nil {
+			panic(err)
+		}
 	}
-	db.Cancel()
 }

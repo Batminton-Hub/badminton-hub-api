@@ -1,7 +1,6 @@
 package util
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,15 +12,22 @@ import (
 
 var srv *http.Server
 
-func ShutdownServer() {
+func ShutdownServer(closeFunc ...func()) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	// Wait for shutdown signal
 	<-quit
-	log.Println("Shutdown signal received")
+	fmt.Println("Shutdown signal received")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := InitConText(30 * time.Second)
 	defer cancel()
 
+	// Close services
+	for _, close := range closeFunc {
+		close()
+	}
+
+	// Shutdown server
 	if err := srv.Shutdown(ctx); err != nil {
 		fmt.Println("Forced shutdown:", err)
 	}
@@ -36,7 +42,7 @@ func HttpServer(handler http.Handler) *http.Server {
 		Handler: handler,
 	}
 
-	fmt.Println("Server port:", config.ServerPort)
+	fmt.Println("Server port", config.ServerPort)
 	return srv
 }
 

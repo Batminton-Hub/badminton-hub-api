@@ -3,17 +3,20 @@ package redis
 import (
 	"Badminton-Hub/util"
 	"context"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
+type CloseRedisCache func()
+
 type RedisCache struct {
 	client redis.Client
 }
 
-func NewRedisCache() *RedisCache {
+func NewRedisCache() (*RedisCache, CloseRedisCache) {
 	config := util.LoadConfig()
 	client := redis.NewClient(&redis.Options{
 		Addr:     config.RedisCacheAddr, // use default Addr
@@ -30,7 +33,18 @@ func NewRedisCache() *RedisCache {
 		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
 
-	return &RedisCache{
+	redisCache := &RedisCache{
 		client: *client,
+	}
+
+	closeRedis := closeRedisCache(client)
+
+	return redisCache, closeRedis
+}
+
+func closeRedisCache(client *redis.Client) CloseRedisCache {
+	return func() {
+		fmt.Println("closeRedisCache client")
+		client.Close()
 	}
 }

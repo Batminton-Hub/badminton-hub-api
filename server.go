@@ -5,6 +5,7 @@ import (
 	third_party "Badminton-Hub/internal/adapter/outbound/3rdParty"
 	"Badminton-Hub/internal/adapter/outbound/cache/redis"
 	"Badminton-Hub/internal/adapter/outbound/database/mongoDB"
+	"Badminton-Hub/internal/adapter/outbound/observability/metrics/prometheus"
 	"Badminton-Hub/internal/core/service"
 	"Badminton-Hub/internal/core_util"
 	"Badminton-Hub/util"
@@ -12,24 +13,25 @@ import (
 )
 
 func StartServer() {
-	defer util.ShutdownServer()
-
 	// Load configuration
 	err := util.SetConfig()
 	if err != nil {
 		log.Fatalln("Failed to load configuration: " + err.Error())
 	}
-	config := util.LoadConfig()
 
 	// Initialize MongoDB
-	db := mongoDB.NewMongoDB(config.DBName)
+	db, closeDB := mongoDB.NewMongoDB()
 
 	// Initialize Redis cache
-	cacheRedis := redis.NewRedisCache()
+	cacheRedis, closeRedis := redis.NewRedisCache()
+
+	// Setup Observability
+	metrics := prometheus.NewPrometheus()
 
 	// Setup Util
+	observabilityUtil := core_util.NewObservability(metrics)
 	encryptionJWT := core_util.NewJWTEncryptionUtil()
-	middlewareUtil := service.NewMiddlewareUtil(encryptionJWT)
+	middlewareUtil := core_util.NewMiddlewareUtil(encryptionJWT)
 
 	// Setup 3rd Party
 	thirdPartyUtil := third_party.NewThirdPartyUtil()
@@ -49,14 +51,19 @@ func StartServer() {
 		authenticationSystem,
 		redirect,
 		member,
+		observabilityUtil,
 	)
 
+	// Graceful shutdown
+	defer util.ShutdownServer(closeDB, closeRedis)
+
 	// Initialize HTTP server
-	externalRoute.Start()
-	defer externalRoute.Run()
+	runServer := externalRoute.Start()
+	defer runServer()
 
 	externalRoute.RouteAuthenticationSystem()
 	externalRoute.RouteRedirect()
 	externalRoute.RouteCallback()
 	externalRoute.RouteMember()
+	externalRoute.RouteObservability()
 }

@@ -1,32 +1,21 @@
 version: "3.8"
+name: badminton-hub-api
 
 services:
-  app:
+  badminton-hub:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: config/Dockerfile
     ports:
       - "8080:8080"
     environment:
-      - DB_Name=badminton_hub
-      - MONGO_URI=mongodb://mongo:27017
-    depends_on:
-      - mongo
-    networks:
-      - badminton-network
+      - SERVER_PORT=8080
+      # - DB_Name=badminton_hub
+      # - MONGO_URI=mongodb://mongo:27017
 
-  mongo:
-    image: mongo:latest
+  prometheus:
+    image: prom/prometheus:latest
     ports:
-      - "27017:27017"
+      - 9090:9090
     volumes:
-      - mongo_data:/data/db
-    networks:
-      - badminton-network
-
-volumes:
-  mongo_data:
-
-networks:
-  badminton-network:
-    driver: bridge
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml

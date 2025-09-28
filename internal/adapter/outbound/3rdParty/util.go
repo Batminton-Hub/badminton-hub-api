@@ -12,11 +12,11 @@ func NewThirdPartyUtil() *ThirdPartyUtilImpl {
 	return &ThirdPartyUtilImpl{}
 }
 
-func (t *ThirdPartyUtilImpl) BingingRequest(platform string, platformData any) (domain.ThirdPartyDataForm, domain.Resp) {
+func (t *ThirdPartyUtilImpl) BindingRequest(platform string, platformData any) (domain.ThirdPartyDataForm, domain.Resp) {
 	dataForm := domain.ThirdPartyDataForm{}
 	switch platform {
 	case domain.GOOGLE:
-		return google.BingingRequest(platformData)
+		return google.BindingRequest(platformData)
 	default:
 		return dataForm, domain.ErrPlatformNotSupport
 	}
