@@ -20,13 +20,13 @@ type MongoDB struct {
 }
 
 func NewMongoDB() (*MongoDB, CloseMongoDB) {
+	ctx, cancel := util.InitConText(2 * time.Second)
+	defer cancel()
 	config := util.LoadConfig()
 	client, err := mongo.Connect(options.Client().ApplyURI(config.MongoDBURL))
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
 	mongoDB := &MongoDB{
 		Database: client.Database(config.DBName),
 		Client:   client,

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -37,12 +38,13 @@ func ShutdownServer(closeFunc ...func()) {
 
 func HttpServer(handler http.Handler) *http.Server {
 	config := LoadConfig()
+
 	srv = &http.Server{
-		Addr:    config.ServerPort,
+		Addr:    ":" + strings.TrimPrefix(config.ServerPort, ":"),
 		Handler: handler,
 	}
 
-	fmt.Println("Server port", config.ServerPort)
+	fmt.Println("Server port : ", config.ServerPort)
 	return srv
 }
 

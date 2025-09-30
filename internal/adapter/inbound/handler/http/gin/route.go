@@ -47,6 +47,6 @@ func (m *MainRoute) RouteMember() {
 }
 
 func (m *MainRoute) RouteObservability() {
-	observability := engine.Group("/observability")
+	observability := engine.Group("/")
 	observability.GET("/metrics", m.observability.Metrics)
 }

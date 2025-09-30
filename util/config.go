@@ -75,12 +75,13 @@ func SetConfig() error {
 	}
 
 	fmt.Println("MongoDBURL ", config.MongoDBURL)
-	fmt.Println("config.TokenExpired ", config.BearerTokenExp)
-	fmt.Println("config.DefaultAESIV ", config.DefaultAESIV)
-	fmt.Println("config.RedisCacheDB ", config.RedisCacheDB)
-	fmt.Println("config.DefaultGoogleState ", config.DefaultGoogleState)
-	fmt.Println("config.GoogleLoginRedirectURL ", config.GoogleCallbackLoginURL)
-	fmt.Println("config.GoogleRegisterRedirectURL ", config.GoogleCallbackRegisterURL)
+	fmt.Println("RedisCacheAddr ", config.RedisCacheAddr)
+	fmt.Println("TokenExpired ", config.BearerTokenExp)
+	fmt.Println("DefaultAESIV ", config.DefaultAESIV)
+	fmt.Println("RedisCacheDB ", config.RedisCacheDB)
+	fmt.Println("DefaultGoogleState ", config.DefaultGoogleState)
+	fmt.Println("GoogleLoginRedirectURL ", config.GoogleCallbackLoginURL)
+	fmt.Println("GoogleRegisterRedirectURL ", config.GoogleCallbackRegisterURL)
 
 	return nil
 }
