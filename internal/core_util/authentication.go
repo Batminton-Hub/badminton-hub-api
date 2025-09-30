@@ -67,13 +67,34 @@ func Authenticate(authInfo domain.AuthInfo, memberUtil port.MiddlewareUtil) (int
 	return domain.AuthSuccess.HttpStatus, response
 }
 
-func Login(loginInfo domain.LoginInfo, ctx context.Context, memberRepo port.MemberRepo, middlewareUtil port.MiddlewareUtil) (int, domain.RespLogin) {
+type LoginSystem struct {
+	Ctx            context.Context
+	MemberRepo     port.MemberRepo
+	MiddlewareUtil port.MiddlewareUtil
+	ThirdPartyUtil port.ThirdPartyUtil
+}
+
+func NewLoginSystem(
+	ctx context.Context,
+	memberRepo port.MemberRepo,
+	middlewareUtil port.MiddlewareUtil,
+	thirdPartyUtil port.ThirdPartyUtil,
+) *LoginSystem {
+	return &LoginSystem{
+		Ctx:            ctx,
+		MemberRepo:     memberRepo,
+		MiddlewareUtil: middlewareUtil,
+		ThirdPartyUtil: thirdPartyUtil,
+	}
+}
+
+func (l *LoginSystem) Login(loginInfo domain.LoginInfo) (int, domain.RespLogin) {
 	response := domain.RespLogin{}
 
 	config := util.LoadConfig()
 	loginForm := loginInfo.LoginForm
 
-	memberBody, err := memberRepo.FindEmailMember(ctx, loginForm.Email)
+	memberBody, err := l.MemberRepo.FindEmailMember(l.Ctx, loginForm.Email)
 	if err != nil {
 		response.Resp = domain.ErrMemberEmailNotFound
 		return http.StatusBadRequest, response
@@ -91,7 +112,7 @@ func Login(loginInfo domain.LoginInfo, ctx context.Context, memberRepo port.Memb
 		UserID:   memberBody.UserID,
 	}
 
-	tokenObj, err := middlewareUtil.GenBearerToken(hashAuth)
+	tokenObj, err := l.MiddlewareUtil.GenBearerToken(hashAuth)
 	if err != nil {
 		response.Resp = domain.ErrGenerateToken
 		return http.StatusInternalServerError, response
@@ -102,7 +123,61 @@ func Login(loginInfo domain.LoginInfo, ctx context.Context, memberRepo port.Memb
 	return domain.LoginSuccess.HttpStatus, response
 }
 
-func Register(registerInfo domain.RegisterInfo, ctx context.Context, memberRepo port.MemberRepo, middlewareUtil port.MiddlewareUtil) (int, domain.RespRegister) {
+func (l *LoginSystem) LoginThirdParty(loginInfo domain.LoginInfo) (int, domain.RespLogin) {
+	response := domain.RespLogin{}
+	info, resp := l.ThirdPartyUtil.BindingRequest(loginInfo.Platform, loginInfo.PlatformData)
+	if resp.Status == domain.ERROR {
+		response.Resp = resp
+		return resp.HttpStatus, response
+	}
+
+	loginForm := domain.LoginForm{
+		Email: info.Email,
+	}
+	memberBody, err := l.MemberRepo.FindEmailMember(l.Ctx, loginForm.Email)
+	if err != nil {
+		response.Resp = domain.ErrMemberEmailNotFound
+		return http.StatusBadRequest, response
+	}
+
+	// create token
+	hashAuth := domain.HashAuth{
+		CreateAt: memberBody.CreatedAt,
+		UserID:   memberBody.UserID,
+	}
+	tokenObj, err := l.MiddlewareUtil.GenBearerToken(hashAuth)
+	if err != nil {
+		response.Resp = domain.ErrGenerateToken
+		return http.StatusInternalServerError, response
+	}
+
+	response.BearerToken = tokenObj.Token
+	response.Resp = domain.LoginSuccess
+	return http.StatusOK, response
+}
+
+type RegisterSystem struct {
+	Ctx            context.Context
+	MemberRepo     port.MemberRepo
+	MiddlewareUtil port.MiddlewareUtil
+	ThirdPartyUtil port.ThirdPartyUtil
+}
+
+func NewRegisterSystem(
+	ctx context.Context,
+	memberRepo port.MemberRepo,
+	middlewareUtil port.MiddlewareUtil,
+	thirdPartyUtil port.ThirdPartyUtil,
+) *RegisterSystem {
+	return &RegisterSystem{
+		Ctx:            ctx,
+		MemberRepo:     memberRepo,
+		MiddlewareUtil: middlewareUtil,
+		ThirdPartyUtil: thirdPartyUtil,
+	}
+}
+
+func (r *RegisterSystem) Register(registerInfo domain.RegisterInfo) (int, domain.RespRegister) {
 	registerForm := registerInfo.RegisterForm
 	response := domain.RespRegister{}
 	config := util.LoadConfig()
@@ -121,7 +196,7 @@ func Register(registerInfo domain.RegisterInfo, ctx context.Context, memberRepo 
 		UpdatedAt:  updateAt,
 	}
 
-	if err := memberRepo.SaveMember(ctx, memberBody); err != nil {
+	if err := r.MemberRepo.SaveMember(r.Ctx, memberBody); err != nil {
 		switch err {
 		case domain.ErrMemberRegisterFailDuplicateEmail.Err:
 			response.Resp = domain.ErrMemberRegisterFailDuplicateEmail
@@ -138,7 +213,7 @@ func Register(registerInfo domain.RegisterInfo, ctx context.Context, memberRepo 
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	tokenObj, err := middlewareUtil.GenBearerToken(hashAuth)
+	tokenObj, err := r.MiddlewareUtil.GenBearerToken(hashAuth)
 	if err != nil {
 		response.Resp = domain.ErrGenerateToken
 		return http.StatusInternalServerError, response
@@ -149,54 +224,9 @@ func Register(registerInfo domain.RegisterInfo, ctx context.Context, memberRepo 
 	return domain.RegisterSuccess.HttpStatus, response // 201 Created for successful registration
 }
 
-func LoginThirdParty(
-	loginInfo domain.LoginInfo,
-	ctx context.Context,
-	memberRepo port.MemberRepo,
-	middlewareUtil port.MiddlewareUtil,
-	thirdPartyUtil port.ThirdPartyUtil,
-) (int, domain.RespLogin) {
-	response := domain.RespLogin{}
-	info, resp := thirdPartyUtil.BingingRequest(loginInfo.Platform, loginInfo.PlatformData)
-	if resp.Status == domain.ERROR {
-		response.Resp = resp
-		return resp.HttpStatus, response
-	}
-
-	loginForm := domain.LoginForm{
-		Email: info.Email,
-	}
-	memberBody, err := memberRepo.FindEmailMember(ctx, loginForm.Email)
-	if err != nil {
-		response.Resp = domain.ErrMemberEmailNotFound
-		return http.StatusBadRequest, response
-	}
-
-	// create token
-	hashAuth := domain.HashAuth{
-		CreateAt: memberBody.CreatedAt,
-		UserID:   memberBody.UserID,
-	}
-	tokenObj, err := middlewareUtil.GenBearerToken(hashAuth)
-	if err != nil {
-		response.Resp = domain.ErrGenerateToken
-		return http.StatusInternalServerError, response
-	}
-
-	response.BearerToken = tokenObj.Token
-	response.Resp = domain.LoginSuccess
-	return http.StatusOK, response
-}
-
-func RegisterThirdParty(
-	registerInfo domain.RegisterInfo,
-	ctx context.Context,
-	memberRepo port.MemberRepo,
-	middlewareUtil port.MiddlewareUtil,
-	thirdPartyUtil port.ThirdPartyUtil,
-) (int, domain.RespRegister) {
+func (r *RegisterSystem) RegisterThirdParty(registerInfo domain.RegisterInfo) (int, domain.RespRegister) {
 	response := domain.RespRegister{}
-	info, resp := thirdPartyUtil.BingingRequest(registerInfo.Platform, registerInfo.PlatformData)
+	info, resp := r.ThirdPartyUtil.BindingRequest(registerInfo.Platform, registerInfo.PlatformData)
 	if resp.Status == domain.ERROR {
 		response.Resp = resp
 		return resp.HttpStatus, response
@@ -219,7 +249,7 @@ func RegisterThirdParty(
 		CreatedAt:    createAt,
 		UpdatedAt:    updateAt,
 	}
-	if err := memberRepo.SaveMember(ctx, memberBody); err != nil {
+	if err := r.MemberRepo.SaveMember(r.Ctx, memberBody); err != nil {
 		switch err {
 		case domain.ErrMemberRegisterFailDuplicateEmail.Err:
 			response.Resp = domain.ErrMemberRegisterFailDuplicateEmail
@@ -236,7 +266,7 @@ func RegisterThirdParty(
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	tokenObj, err := middlewareUtil.GenBearerToken(hashAuth)
+	tokenObj, err := r.MiddlewareUtil.GenBearerToken(hashAuth)
 	if err != nil {
 		return http.StatusInternalServerError, response
 	}
@@ -244,4 +274,69 @@ func RegisterThirdParty(
 	response.BearerToken = tokenObj.Token
 	response.Resp = domain.RedirectSuccess
 	return http.StatusCreated, response
+}
+
+type MiddlewareUtil struct {
+	encryption port.EncryptionUtil
+}
+
+func NewMiddlewareUtil(
+	encryption port.EncryptionUtil,
+) *MiddlewareUtil {
+	return &MiddlewareUtil{
+		encryption: encryption,
+	}
+}
+
+// middleware util
+func (m *MiddlewareUtil) ValidateBearerToken(tokenObj domain.BearerToken) (domain.AuthBody, error) {
+	config := util.LoadConfig()
+
+	token := tokenObj.Token[len("Bearer "):] // Remove "Bearer " prefix
+
+	authBody := domain.AuthBody{}
+	err := m.encryption.Decrypte(token, config.KeyBearerToken, &authBody)
+	if err != nil {
+		return authBody, err
+	}
+
+	if authBody.Exp < time.Now().Unix() {
+		return authBody, fmt.Errorf("token has expired")
+	}
+
+	return authBody, nil
+}
+
+func (m *MiddlewareUtil) GenBearerToken(hashBody domain.HashAuth) (domain.BearerToken, error) {
+	response := domain.BearerToken{}
+	var token string
+	config := util.LoadConfig()
+
+	lt := config.BearerTokenExp
+	createAt := time.Now().UTC()
+	exp := time.Now().Add(lt).Unix()
+
+	byteHash, err := util.EncryptGOB(hashBody)
+	if err != nil {
+		return response, fmt.Errorf("failed to encrypt hash body: %w", err)
+	}
+	rawHash := string(byteHash)
+	authBody := domain.AuthBody{
+		CreateAt: createAt,
+		Exp:      exp,
+		Data: domain.AuthMember{
+			UserID:    hashBody.UserID,
+			CreatedAt: hashBody.CreateAt,
+			HashAuth:  HashAuth(rawHash, config.KeyHashAuth),
+		},
+	}
+
+	encryptedMember, err := m.encryption.Encrypte(authBody, config.KeyBearerToken, lt)
+	if err != nil {
+		return response, fmt.Errorf("failed to encrypt member: %w", err)
+	}
+
+	token = encryptedMember
+	response.Token = token
+	return response, nil
 }

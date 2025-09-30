@@ -1,32 +1,54 @@
 version: "3.8"
+name: badminton-hub-api
 
 services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: config/Dockerfile
     ports:
       - "8080:8080"
     environment:
+      - SERVER_PORT=8080
+      - REDIS_CACHE_ADDR=redis:6379
       - DB_Name=badminton_hub
-      - MONGO_URI=mongodb://mongo:27017
-    depends_on:
-      - mongo
-    networks:
-      - badminton-network
+      - MONGO_DB_URL=mongodb+srv://root:root@test.ofojfkl.mongodb.net/
+      # - MONGO_DB_URL=mongodb://localhost:27017/
 
-  mongo:
-    image: mongo:latest
+  prometheus:
+    image: prom/prometheus:latest
     ports:
-      - "27017:27017"
+      - 9090:9090
     volumes:
-      - mongo_data:/data/db
-    networks:
-      - badminton-network
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml
 
-volumes:
-  mongo_data:
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./config/grafana.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+  
+  redis:
+    image: redis:latest
+    ports:
+      - '6379:6379'
+  
+#   mongo:
+#     image: mongo:latest
+#     ports:
+#       - '27018:27017'
+#     environment:
+#       MONGO_INITDB_ROOT_USERNAME: admin
+#       MONGO_INITDB_ROOT_PASSWORD: password123
+#       MONGO_INITDB_DATABASE: badminton_hub
+#     volumes:
+#       - ./data/db:/data/db
+#       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+#     networks:
+#       - mongodb_network
 
-networks:
-  badminton-network:
-    driver: bridge
+# networks:
+#   mongodb_network:
+#     driver: bridge
