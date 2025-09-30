@@ -2,7 +2,7 @@ package google
 
 import "Badminton-Hub/internal/core/domain"
 
-func BingingRequest(platformData any) (domain.ThirdPartyDataForm, domain.Resp) {
+func BindingRequest(platformData any) (domain.ThirdPartyDataForm, domain.Resp) {
 	response := domain.ThirdPartyDataForm{}
 	info, ok := platformData.(GoogleMemberInfo)
 	if !ok {

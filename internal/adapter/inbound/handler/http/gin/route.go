@@ -6,14 +6,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type RunServer func()
+
 var engine *gin.Engine
 
-func (m *MainRoute) Start() {
+func (m *MainRoute) Start() RunServer {
 	engine = gin.Default()
+	return runServer()
 }
 
-func (m *MainRoute) Run() {
-	util.RunServer(engine)
+func runServer() RunServer {
+	return func() {
+		util.RunServer(engine)
+	}
 }
 
 func (m *MainRoute) RouteAuthenticationSystem() {
@@ -39,4 +44,9 @@ func (m *MainRoute) RouteMember() {
 	member.Use(m.authentication.MiddleWare)
 	member.GET("/profile", m.member.GetProfile)
 	member.PATCH("/profile", m.member.UpdateProfile)
+}
+
+func (m *MainRoute) RouteObservability() {
+	observability := engine.Group("/")
+	observability.GET("/metrics", m.observability.Metrics)
 }
