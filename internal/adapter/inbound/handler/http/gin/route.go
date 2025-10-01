@@ -50,3 +50,8 @@ func (m *MainRoute) RouteObservability() {
 	observability := engine.Group("/")
 	observability.GET("/metrics", m.observability.Metrics)
 }
+
+func (m *MainRoute) RouteHealthCheck() {
+	healthCheck := engine.Group("/")
+	healthCheck.GET("/health-check", m.healthCheck.HealthCheck)
+}

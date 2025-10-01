@@ -5,6 +5,7 @@ import (
 	third_party "Badminton-Hub/internal/adapter/outbound/3rdParty"
 	"Badminton-Hub/internal/adapter/outbound/cache/redis"
 	"Badminton-Hub/internal/adapter/outbound/database/mongoDB"
+	"Badminton-Hub/internal/adapter/outbound/observability/log/zeroLog"
 	"Badminton-Hub/internal/adapter/outbound/observability/metrics/prometheus"
 	"Badminton-Hub/internal/core/service"
 	"Badminton-Hub/internal/core_util"
@@ -25,11 +26,15 @@ func StartServer() {
 	// Initialize Redis cache
 	cacheRedis, closeRedis := redis.NewRedisCache()
 
+	// Graceful shutdown
+	defer util.ShutdownServer(closeDB, closeRedis)
+
 	// Setup Observability
 	metrics := prometheus.NewPrometheus()
+	log := zeroLog.NewZeroLog()
 
 	// Setup Util
-	observabilityUtil := core_util.NewObservability(metrics)
+	observabilityUtil := core_util.NewObservability(metrics, log)
 	encryptionJWT := core_util.NewJWTEncryptionUtil()
 	middlewareUtil := core_util.NewMiddlewareUtil(encryptionJWT)
 
@@ -47,23 +52,21 @@ func StartServer() {
 	member := service.NewMemberService(db)
 
 	// Initialize HTTP server
-	externalRoute := gin.NewGinRoute(
+	route := gin.NewGinRoute(
 		authenticationSystem,
 		redirect,
 		member,
 		observabilityUtil,
 	)
 
-	// Graceful shutdown
-	defer util.ShutdownServer(closeDB, closeRedis)
-
 	// Initialize HTTP server
-	runServer := externalRoute.Start()
+	runServer := route.Start()
 	defer runServer()
 
-	externalRoute.RouteAuthenticationSystem()
-	externalRoute.RouteRedirect()
-	externalRoute.RouteCallback()
-	externalRoute.RouteMember()
-	externalRoute.RouteObservability()
+	route.RouteHealthCheck()
+	route.RouteAuthenticationSystem()
+	route.RouteRedirect()
+	route.RouteCallback()
+	route.RouteMember()
+	route.RouteObservability()
 }

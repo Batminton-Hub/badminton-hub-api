@@ -106,6 +106,10 @@ func getTypeSystem(platform string) string {
 	return domain.THIRD_PARTY
 }
 
+func getPath(c *gin.Context) string {
+	return c.Request.URL.Path
+}
+
 type RespBody struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
