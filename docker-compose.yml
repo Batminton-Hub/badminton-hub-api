@@ -14,14 +14,8 @@ services:
       - DB_Name=badminton_hub
       - MONGO_DB_URL=mongodb+srv://root:root@test.ofojfkl.mongodb.net/
       # - MONGO_DB_URL=mongodb://localhost:27017/
-
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - 9090:9090
-    volumes:
-      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml
-
+    labels: { logging: "promtail" }
+    
   grafana:
     image: grafana/grafana-enterprise:latest
     restart: unless-stopped
@@ -29,11 +23,33 @@ services:
       - '3000:3000'
     volumes:
       - ./config/grafana.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml
   
   redis:
     image: redis:latest
     ports:
       - '6379:6379'
+
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes: [./data/loki:/loki]
+
+  promtail:
+    image: grafana/promtail:latest
+    command: -config.file=/etc/promtail/docker-config.yaml
+    volumes:
+      - ./config/promtail.yaml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on: [loki]
+
   
 #   mongo:
 #     image: mongo:latest

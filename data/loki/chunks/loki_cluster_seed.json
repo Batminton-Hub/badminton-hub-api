@@ -1,0 +1,12 @@
+{
+    "UID": "e6d04a1e-1e31-4aba-8bda-7a0688cbe8d2",
+    "created_at": "2025-10-01T11:56:45.515028522Z",
+    "version": {
+        "version": "3.5.1",
+        "revision": "d4e637ce",
+        "branch": "release-3.5.x",
+        "buildUser": "root@buildkitsandbox",
+        "buildDate": "2025-05-19T17:07:24Z",
+        "goVersion": "go1.24.3"
+    }
+}

@@ -32,6 +32,7 @@ const (
 	DEFAULT_AES_IV               = "DEFAULT_AES_IV"
 	DEFAULT_GOOGLE_STATE         = "DEFAULT_GOOGLE_STATE"
 	BEARER_TOKEN_EXP             = "BEARER_TOKEN_EXP"
+	TRACER_SERVER_URL            = "TRACER_SERVER_URL"
 )
 
 // Server Config
@@ -72,6 +73,9 @@ func SetConfig() error {
 
 		// Token
 		BearerTokenExp: getEnv(BEARER_TOKEN_EXP, 5*time.Minute),
+
+		// Jaeger
+		TracerServerURL: getEnv(TRACER_SERVER_URL, "http://localhost:14268/api/traces"),
 	}
 
 	fmt.Println("MongoDBURL ", config.MongoDBURL)
@@ -82,6 +86,7 @@ func SetConfig() error {
 	fmt.Println("DefaultGoogleState ", config.DefaultGoogleState)
 	fmt.Println("GoogleLoginRedirectURL ", config.GoogleCallbackLoginURL)
 	fmt.Println("GoogleRegisterRedirectURL ", config.GoogleCallbackRegisterURL)
+	fmt.Println("TracerServerURL ", config.TracerServerURL)
 
 	return nil
 }
