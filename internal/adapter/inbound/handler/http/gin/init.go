@@ -5,6 +5,7 @@ import (
 )
 
 type MainRoute struct {
+	healthCheck    HealthCheckController
 	authentication AuthenticationSystemController
 	redirect       RedirectController
 	member         MemberController
@@ -18,6 +19,7 @@ func NewGinRoute(
 	observability port.Observability,
 ) *MainRoute {
 	response := &MainRoute{
+		healthCheck:    &HealthCheck{observability},
 		authentication: &AuthenticationSystem{authenticationSystem, observability},
 		redirect:       &Redirect{redirect},
 		member:         &Member{member},

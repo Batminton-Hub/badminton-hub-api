@@ -40,6 +40,9 @@ type InternalConfig struct {
 
 	// Token
 	BearerTokenExp time.Duration
+
+	// Jaeger
+	TracerServerURL string
 }
 
 type GoogleOAuth struct {

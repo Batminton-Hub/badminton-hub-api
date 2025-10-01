@@ -1,13 +1,13 @@
 apiVersion: 1
 
 datasources:
-  # - name: Loki
-  #   type: loki
-  #   access: proxy
-  #   url: http://loki:3100
-  #   version: 1
-  #   editable: false
-  #   isDefault: true
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    version: 1
+    editable: false
+    isDefault: true
 
   - name: Prometheus
     type: prometheus
@@ -16,4 +16,4 @@ datasources:
     version: 1
     editable: false
   
- 
+

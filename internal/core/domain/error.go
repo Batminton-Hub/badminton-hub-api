@@ -36,6 +36,7 @@ func successNew(code int, msg string, httpStatus int) Resp {
 var (
 	//////////////////////// Success Code ////////////////////////
 	Success             = successNew(0, "Success", http.StatusOK)
+	HealthCheckSuccess  = successNew(0, "Success", http.StatusOK)
 	RegisterSuccess     = successNew(0, "Success", http.StatusCreated)
 	LoginSuccess        = successNew(0, "Success", http.StatusOK)
 	AuthSuccess         = successNew(0, "Success", http.StatusOK)
