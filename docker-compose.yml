@@ -11,6 +11,7 @@ services:
     environment:
       - SERVER_PORT=8080
       - REDIS_CACHE_ADDR=redis:6379
+      - TRACER_SERVER_URL=jaeger:4318
       - DB_Name=badminton_hub
       - MONGO_DB_URL=mongodb+srv://root:root@test.ofojfkl.mongodb.net/
       # - MONGO_DB_URL=mongodb://localhost:27017/
@@ -50,6 +51,11 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on: [loki]
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - 16686:16686
+      - 4318:4318
   
 #   mongo:
 #     image: mongo:latest

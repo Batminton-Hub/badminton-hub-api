@@ -7,6 +7,7 @@ import (
 	"Badminton-Hub/internal/adapter/outbound/database/mongoDB"
 	"Badminton-Hub/internal/adapter/outbound/observability/log/zeroLog"
 	"Badminton-Hub/internal/adapter/outbound/observability/metrics/prometheus"
+	"Badminton-Hub/internal/adapter/outbound/observability/trace/otel"
 	"Badminton-Hub/internal/core/service"
 	"Badminton-Hub/internal/core_util"
 	"Badminton-Hub/util"
@@ -32,9 +33,10 @@ func StartServer() {
 	// Setup Observability
 	metrics := prometheus.NewPrometheus()
 	log := zeroLog.NewZeroLog()
+	trace := otel.NewOtel("Badminton-Hub")
 
 	// Setup Util
-	observabilityUtil := core_util.NewObservability(metrics, log)
+	observabilityUtil := core_util.NewObservability(metrics, log, trace)
 	encryptionJWT := core_util.NewJWTEncryptionUtil()
 	middlewareUtil := core_util.NewMiddlewareUtil(encryptionJWT)
 
