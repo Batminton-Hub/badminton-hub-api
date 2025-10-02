@@ -1,7 +1,10 @@
 package domain
 
-import "net/http"
+import (
+	"net/http"
+)
 
+// Metrics
 type MetricsHttp struct {
 	Writer  http.ResponseWriter
 	Request *http.Request
@@ -17,6 +20,7 @@ type MetricsGauge struct {
 	Help string
 }
 
+// Log
 type LogInfo struct {
 	Path    string `json:"path,omitempty"`
 	Job     string `json:"job,omitempty"`
@@ -29,4 +33,14 @@ type LogError struct {
 	Error string `json:"error,omitempty"`
 	File  string `json:"file,omitempty"`
 	Line  int    `json:"line,omitempty"`
+}
+
+// Trace
+type TracerTag struct {
+	TypeVal   string
+	Attribute any
+}
+
+type TracerStatus struct {
+	Code any
 }

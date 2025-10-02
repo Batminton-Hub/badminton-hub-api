@@ -16,4 +16,9 @@ datasources:
     version: 1
     editable: false
   
-
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    version: 1
+    editable: false
