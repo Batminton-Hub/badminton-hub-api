@@ -75,7 +75,7 @@ func SetConfig() error {
 		BearerTokenExp: getEnv(BEARER_TOKEN_EXP, 5*time.Minute),
 
 		// Jaeger
-		TracerServerURL: getEnv(TRACER_SERVER_URL, "http://localhost:14268/api/traces"),
+		TracerServerURL: getEnv(TRACER_SERVER_URL, "localhost:4318"),
 	}
 
 	fmt.Println("MongoDBURL ", config.MongoDBURL)

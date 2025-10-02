@@ -50,3 +50,8 @@ const ( // Google Config
 	GoogleUserInfoEmail   = "https://www.googleapis.com/auth/userinfo.email"
 	GoogleUserInfoProfile = "https://www.googleapis.com/auth/userinfo.profile"
 )
+
+const ( // Type Value
+	String = "STRING"
+	Int64  = "INT64"
+)
