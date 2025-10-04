@@ -3,6 +3,7 @@ package gin
 import (
 	"Badminton-Hub/internal/core/domain"
 	"Badminton-Hub/internal/core/port"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,41 +17,52 @@ type HealthCheck struct {
 }
 
 func (h *HealthCheck) HealthCheck(c *gin.Context) {
-	counter := domain.MetricsCounter{
-		Name: "health-check-request",
-		Help: "Number of health check requests",
-	}
-	countHealthCheck := h.observability.Metrics().Counter(counter)
-	countHealthCheck.Inc()
+	// counter := domain.MetricsCounter{
+	// 	Name: "health-check-request",
+	// 	Help: "Number of health check requests",
+	// }
+	// countHealthCheck := h.observability.Metrics().Counter(counter)
+	// countHealthCheck.Inc()
 
-	logInfo := domain.LogInfo{
-		Path:    getPath(c),
-		Job:     "health-check",
-		Message: "Health check success",
-	}
-	h.observability.Log().Info(c, logInfo)
+	// logInfo := domain.LogInfo{
+	// 	Path:    getPath(c),
+	// 	Job:     "health-check",
+	// 	Message: "Health check success",
+	// }
+	// h.observability.Log().Info(c, logInfo)
 
-	tracer := h.observability.Trace()
-	scopeName := "health-check"
-	initTracer := tracer.InitTracer(scopeName)
-	span := initTracer.ParaentSpan(c, "health-check")
-	defer span.End()
+	// scopeName := "health-check"
+	// trace := h.observability.Trace().SetScope(scopeName)
+	// span := trace.CreateSpan(c, "start-trace")
+	// defer span.End()
+	// fmt.Println("traceID :", span.GetTraceID())
 
-	span.SetTag(tracer.Tag().String("test-string-key-1", "test-value-1"))
-	span.SetTag(tracer.Tag().String("test-string-key-2", "test-value-2"))
+	// span1 := span.AddSpan("health-check-span-1")
+	// span1.End()
 
-	eventTag := []domain.TracerTag{
-		tracer.Tag().String("test-string-key-3", "test-value-3"),
-		tracer.Tag().String("test-string-key-4", "test-value-4"),
-		tracer.Tag().Int64("test-int64-key-1", 123),
-		tracer.Tag().Int64("test-int64-key-2", 456),
-	}
-	span.AddEvent("test-event-1", eventTag...)
-	span.SetStatus(tracer.Code().OK(), "test-status-1")
-	span.SetName("test-name-1")
+	// span2 := span1.AddSpan("health-check-span-2")
+	// span2.End()
 
-	// spanID := span.GetSpan().ID()
+	// TestHealthCheck(h.observability, span.GetTraceID(), span2.GetSpanID())
 
 	response := domain.HealthCheckSuccess
 	Resp(c, response.HttpStatus, response.Code, response.Msg, nil)
+}
+
+func TestHealthCheck(observability port.Observability, traceID string, spanID string) {
+	newCtx, err := observability.Trace().NewContext(traceID, spanID)
+	if err != nil {
+		fmt.Println("error :", err)
+	}
+	scopeName := "health-check"
+	trace := observability.Trace().SetScope(scopeName)
+	newSpan := trace.ConnectSpan(newCtx)
+
+	span1 := newSpan.AddSpan("health-check-span-3")
+	span1.End()
+
+	span2 := newSpan.AddSpan("health-check-span-4")
+	span2.End()
+
+	fmt.Println("traceID in function:", span1.GetTraceID())
 }

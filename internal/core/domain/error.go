@@ -76,6 +76,7 @@ var (
 
 	// General
 	ErrActionNotSupport = errorNew(5000, "Action not support", http.StatusInternalServerError)
+	ErrInternalServer   = errorNew(5001, "Internal server error", http.StatusInternalServerError)
 
 	// Third Party
 	ErrInvalidDecode3rdPartyForm = errorNew(6000, "Invalid decode 3rd party form", http.StatusBadRequest)

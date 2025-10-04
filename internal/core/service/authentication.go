@@ -13,6 +13,7 @@ type AuthenticationService struct {
 	memberRepo     port.MemberRepo
 	encryption     port.EncryptionUtil
 	middlewareUtil port.MiddlewareUtil
+	observability  port.Observability
 }
 
 type AuthenticateService struct {
@@ -45,11 +46,13 @@ func NewAuthenticationService(
 	memberRepo port.MemberRepo,
 	middlewareUtil port.MiddlewareUtil,
 	thirdPartyUtil port.ThirdPartyUtil,
+	observability port.Observability,
 ) *AuthenticationService {
 	return &AuthenticationService{
 		memberRepo:     memberRepo,
 		middlewareUtil: middlewareUtil,
 		thirdPartyUtil: thirdPartyUtil,
+		observability:  observability,
 	}
 }
 
@@ -77,11 +80,20 @@ func NewMiddlewareSystem(
 
 // authentication service
 func (a *AuthenticationService) Login(loginInfo domain.LoginInfo) (int, domain.RespLogin) {
-	ctx, cancel := util.InitConText(2 * time.Second)
-	defer cancel()
+	trace := a.observability.Trace()
+	startTrace := trace.SetScope(loginInfo.ScopeName)
+	tag := trace.Tag()
+	span := startTrace.CreateSpan(loginInfo.Context, "login")
+	span.SetTag(tag.String("platform", loginInfo.Platform))
+	span.SetTag(tag.String("email", loginInfo.LoginForm.Email))
+	span.SetTag(tag.Bool("is_third_party", loginInfo.TypeSystem == domain.THIRD_PARTY))
+	defer span.End()
 
-	login := core_util.NewLoginSystem(ctx, a.memberRepo, a.middlewareUtil, a.thirdPartyUtil)
+	ctx := loginInfo.Context
+	login := core_util.NewLoginSystem(ctx, a.memberRepo, a.middlewareUtil, a.thirdPartyUtil, a.observability)
 
+	loginInfo.TraceID = span.GetTraceID()
+	loginInfo.SpanID = span.GetSpanID()
 	response := domain.RespLogin{}
 	switch loginInfo.TypeSystem {
 	case domain.SYSTEM:

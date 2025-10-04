@@ -31,6 +31,10 @@ type MetricsGaugeUtil interface {
 	Sub(value float64)
 }
 
+type MetricsHistogramUtil interface {
+	Observe(value float64)
+}
+
 // Log
 type Log interface {
 	Info(ctx context.Context, info domain.LogInfo)
@@ -39,36 +43,36 @@ type Log interface {
 
 // Trace
 type Trace interface {
-	InitTracer(scopeName string) TraceUtil
+	// CreateSpan(ctx context.Context, scopeName, name string) Span
+	SetScope(scopeName string) Span
+	NewContext(traceID string, spanID string) (context.Context, error)
 	Tag() Tag
 	Code() Code
 }
-type TraceUtil interface {
-	ParaentSpan(ctx context.Context, name string) ParentSpanUtil
+
+type Span interface {
+	CreateSpan(ctx context.Context, name string) SpanUtil
+	ConnectSpan(ctx context.Context) SpanUtil
 }
 
-type ParentSpanUtil interface {
+type SpanUtil interface {
 	End()
-	GetSpan() GetSpan
-	ChildSpan(name string) ParentSpanUtil
-	SetTag(tag domain.TracerTag)
-	AddEvent(eventName string, groupTag ...domain.TracerTag)
+	AddSpan(name string) SpanUtil
+	GetTraceID() string
+	GetSpanID() string
+	SetTag(tags ...domain.TracerTag)
+	AddEvent(name string, tags ...domain.TracerTag)
+	AddLink(ctx context.Context, tags ...domain.TracerTag)
 	SetStatus(status domain.TracerStatus, description string)
-	SetName(name string)
-	SetLink(spanID string, groupTag ...domain.TracerTag)
 }
 
 type Tag interface {
 	String(key string, value string) domain.TracerTag
 	Int64(key string, value int64) domain.TracerTag
+	Bool(key string, value bool) domain.TracerTag
 }
 
 type Code interface {
 	OK() domain.TracerStatus
 	Error() domain.TracerStatus
-}
-
-type GetSpan interface {
-	ID() string
-	Context() context.Context
 }

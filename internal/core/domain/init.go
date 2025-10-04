@@ -54,4 +54,5 @@ const ( // Google Config
 const ( // Type Value
 	String = "STRING"
 	Int64  = "INT64"
+	Bool   = "BOOLEAN"
 )

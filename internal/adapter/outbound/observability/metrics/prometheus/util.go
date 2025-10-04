@@ -10,15 +10,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-type Prometheus struct {
-	CounterInfo map[string]prometheus.Counter
-	GaugeInfo   map[string]prometheus.Gauge
-}
-
 func NewPrometheus() *Prometheus {
 	return &Prometheus{
-		CounterInfo: map[string]prometheus.Counter{},
-		GaugeInfo:   map[string]prometheus.Gauge{},
+		CounterInfo:   map[string]prometheus.Counter{},
+		GaugeInfo:     map[string]prometheus.Gauge{},
+		HistogramInfo: map[string]prometheus.Histogram{},
 	}
 }
 
@@ -50,14 +46,6 @@ func (p *Prometheus) Gauge(info domain.MetricsGauge) port.MetricsGaugeUtil {
 	}
 }
 
-type CounterServiceImpl struct {
-	Counter prometheus.Counter
-}
-
-type GaugeServiceImpl struct {
-	Gauge prometheus.Gauge
-}
-
 func (c *CounterServiceImpl) Inc() {
 	c.Counter.Inc()
 }
@@ -83,4 +71,8 @@ func (g *GaugeServiceImpl) Add(value float64) {
 }
 func (g *GaugeServiceImpl) Sub(value float64) {
 	g.Gauge.Sub(value)
+}
+
+func (h *HistogramServiceImpl) Observe(value float64) {
+	h.Histogram.Observe(value)
 }

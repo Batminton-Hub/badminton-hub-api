@@ -68,10 +68,11 @@ func Authenticate(authInfo domain.AuthInfo, memberUtil port.MiddlewareUtil) (int
 }
 
 type LoginSystem struct {
-	Ctx            context.Context
-	MemberRepo     port.MemberRepo
-	MiddlewareUtil port.MiddlewareUtil
-	ThirdPartyUtil port.ThirdPartyUtil
+	ctx            context.Context
+	memberRepo     port.MemberRepo
+	middlewareUtil port.MiddlewareUtil
+	thirdPartyUtil port.ThirdPartyUtil
+	observability  port.Observability
 }
 
 func NewLoginSystem(
@@ -79,44 +80,69 @@ func NewLoginSystem(
 	memberRepo port.MemberRepo,
 	middlewareUtil port.MiddlewareUtil,
 	thirdPartyUtil port.ThirdPartyUtil,
+	observability port.Observability,
 ) *LoginSystem {
 	return &LoginSystem{
-		Ctx:            ctx,
-		MemberRepo:     memberRepo,
-		MiddlewareUtil: middlewareUtil,
-		ThirdPartyUtil: thirdPartyUtil,
+		ctx:            ctx,
+		memberRepo:     memberRepo,
+		middlewareUtil: middlewareUtil,
+		thirdPartyUtil: thirdPartyUtil,
+		observability:  observability,
 	}
 }
 
 func (l *LoginSystem) Login(loginInfo domain.LoginInfo) (int, domain.RespLogin) {
 	response := domain.RespLogin{}
+	trace := l.observability.Trace()
+	startTrace := trace.SetScope(loginInfo.ScopeName)
+	traceCtx, err := trace.NewContext(loginInfo.TraceID, loginInfo.SpanID)
+	if err != nil {
+		response.Resp = domain.ErrInternalServer
+		return response.Resp.HttpStatus, response
+	}
+	span := startTrace.CreateSpan(traceCtx, "login-nomal")
+	defer span.End()
 
 	config := util.LoadConfig()
 	loginForm := loginInfo.LoginForm
 
-	memberBody, err := l.MemberRepo.FindEmailMember(l.Ctx, loginForm.Email)
+	spanFindEmail := span.AddSpan("find-email-member")
+	memberBody, err := l.memberRepo.FindEmailMember(l.ctx, loginForm.Email)
 	if err != nil {
 		response.Resp = domain.ErrMemberEmailNotFound
+		spanFindEmail.SetStatus(trace.Code().Error(), response.Resp.Msg)
+		spanFindEmail.End()
 		return http.StatusBadRequest, response
 	}
+	spanFindEmail.End()
 
 	// Check password
+	spanPassword := span.AddSpan("check-password")
 	if memberBody.Password != HashPassword(loginForm.Password, config.KeyHashPassword) {
 		response.Resp = domain.ErrLoginHashPassword
+		spanPassword.SetStatus(trace.Code().Error(), response.Resp.Msg)
+		spanPassword.SetTag(trace.Tag().String("member_password", memberBody.Password))
+		spanPassword.SetTag(trace.Tag().String("login_password", HashPassword(loginForm.Password, config.KeyHashPassword)))
+		spanPassword.End()
 		return http.StatusUnauthorized, response
 	}
+	spanPassword.End()
 
 	// create token
+	spanToken := span.AddSpan("create-token")
 	hashAuth := domain.HashAuth{
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-
-	tokenObj, err := l.MiddlewareUtil.GenBearerToken(hashAuth)
+	tokenObj, err := l.middlewareUtil.GenBearerToken(hashAuth)
 	if err != nil {
 		response.Resp = domain.ErrGenerateToken
+		spanToken.SetStatus(trace.Code().Error(), response.Resp.Msg)
+		spanToken.SetTag(trace.Tag().String("error", err.Error()))
+		spanToken.End()
 		return http.StatusInternalServerError, response
 	}
+	spanToken.End()
 
 	response.BearerToken = tokenObj.Token
 	response.Resp = domain.LoginSuccess
@@ -125,7 +151,7 @@ func (l *LoginSystem) Login(loginInfo domain.LoginInfo) (int, domain.RespLogin) 
 
 func (l *LoginSystem) LoginThirdParty(loginInfo domain.LoginInfo) (int, domain.RespLogin) {
 	response := domain.RespLogin{}
-	info, resp := l.ThirdPartyUtil.BindingRequest(loginInfo.Platform, loginInfo.PlatformData)
+	info, resp := l.thirdPartyUtil.BindingRequest(loginInfo.Platform, loginInfo.PlatformData)
 	if resp.Status == domain.ERROR {
 		response.Resp = resp
 		return resp.HttpStatus, response
@@ -134,7 +160,7 @@ func (l *LoginSystem) LoginThirdParty(loginInfo domain.LoginInfo) (int, domain.R
 	loginForm := domain.LoginForm{
 		Email: info.Email,
 	}
-	memberBody, err := l.MemberRepo.FindEmailMember(l.Ctx, loginForm.Email)
+	memberBody, err := l.memberRepo.FindEmailMember(l.ctx, loginForm.Email)
 	if err != nil {
 		response.Resp = domain.ErrMemberEmailNotFound
 		return http.StatusBadRequest, response
@@ -145,7 +171,7 @@ func (l *LoginSystem) LoginThirdParty(loginInfo domain.LoginInfo) (int, domain.R
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	tokenObj, err := l.MiddlewareUtil.GenBearerToken(hashAuth)
+	tokenObj, err := l.middlewareUtil.GenBearerToken(hashAuth)
 	if err != nil {
 		response.Resp = domain.ErrGenerateToken
 		return http.StatusInternalServerError, response

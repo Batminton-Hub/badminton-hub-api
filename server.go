@@ -47,7 +47,7 @@ func StartServer() {
 
 	// Initialize services
 	authenticateUtil := service.NewAuthenticateService(authenticate3rdParty, middlewareUtil, db)
-	authentication := service.NewAuthenticationService(db, middlewareUtil, thirdPartyUtil)
+	authentication := service.NewAuthenticationService(db, middlewareUtil, thirdPartyUtil, observabilityUtil)
 	middlewareSystem := service.NewMiddlewareSystem(authenticateUtil, middlewareUtil)
 	authenticationSystem := service.NewAuthenticationSystem(authentication, middlewareSystem)
 	redirect := service.NewRedirect(redirect3rdParty)

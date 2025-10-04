@@ -1,32 +1,11 @@
 package otel
 
-import (
-	"context"
+import "go.opentelemetry.io/otel/trace"
 
-	"go.opentelemetry.io/otel/trace"
-)
-
-func traceID(ctx context.Context) trace.TraceID {
-	var traceID trace.TraceID
-	span := trace.SpanFromContext(ctx)
-	if span.SpanContext().IsValid() {
-		traceID = span.SpanContext().TraceID()
-	}
-	return traceID
+func traceIDWithString(traceID string) (trace.TraceID, error) {
+	return trace.TraceIDFromHex(traceID)
 }
 
-func spanContext(traceID trace.TraceID) trace.SpanContext {
-	spanCtx := trace.NewSpanContext(trace.SpanContextConfig{
-		TraceID: traceID,
-		SpanID:  trace.SpanID{},
-	})
-	return spanCtx
-}
-
-func stringToTraceID(traceID string) (trace.TraceID, error) {
-	newTraceID, err := trace.TraceIDFromHex(traceID)
-	if err != nil {
-		return trace.TraceID{}, err
-	}
-	return newTraceID, nil
+func spanIDWithString(spanID string) (trace.SpanID, error) {
+	return trace.SpanIDFromHex(spanID)
 }
