@@ -13,6 +13,11 @@ type Resp struct {
 	Err        error
 }
 
+type ErrInfo struct {
+	Err  error
+	Resp Resp
+}
+
 func errorNew(code int, msg string, httpStatus int) Resp {
 	return Resp{
 		HttpStatus: httpStatus,
@@ -67,6 +72,9 @@ var (
 	ErrInvalidOAuthExchange = errorNew(3002, "Invalid OAuth exchange", http.StatusBadRequest)
 	ErrInvalidOAuthClient   = errorNew(3003, "Invalid OAuth client", http.StatusBadRequest)
 	ErrInvalidOAuthDecode   = errorNew(3004, "Invalid OAuth decode", http.StatusBadRequest)
+
+	// Auth
+	ErrAuthenticateFail = errorNew(4000, "Failed to authenticate", http.StatusBadRequest)
 
 	// Token
 	ErrGenerateToken    = errorNew(4000, "Failed to generate token", http.StatusBadRequest)

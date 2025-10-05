@@ -20,6 +20,6 @@ type AuthenticateUtil interface {
 	Authenticate(authInfo domain.AuthInfo) (int, domain.RespAuth)
 }
 type MiddlewareUtil interface {
-	GenBearerToken(hashBody domain.HashAuth) (domain.BearerToken, error)
-	ValidateBearerToken(token domain.BearerToken) (domain.AuthBody, error)
+	GenBearerToken(hashBody domain.HashAuth) (domain.BearerToken, domain.ErrInfo)
+	ValidateBearerToken(token domain.BearerToken) (domain.AuthBody, domain.ErrInfo)
 }

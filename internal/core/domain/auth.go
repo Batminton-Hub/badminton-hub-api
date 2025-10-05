@@ -32,6 +32,8 @@ type LoginInfo struct {
 	TraceID      string
 	SpanID       string
 	ScopeName    string
+	Path         string
+	Job          string
 	Platform     string
 	PlatformData any
 	LoginForm    LoginForm

@@ -5,6 +5,7 @@ import (
 	"Badminton-Hub/internal/core/port"
 	"Badminton-Hub/internal/core_util"
 	"Badminton-Hub/util"
+	"fmt"
 	"time"
 )
 
@@ -89,21 +90,30 @@ func (a *AuthenticationService) Login(loginInfo domain.LoginInfo) (int, domain.R
 	span.SetTag(tag.Bool("is_third_party", loginInfo.TypeSystem == domain.THIRD_PARTY))
 	defer span.End()
 
-	ctx := loginInfo.Context
-	login := core_util.NewLoginSystem(ctx, a.memberRepo, a.middlewareUtil, a.thirdPartyUtil, a.observability)
+	login := core_util.NewLoginSystem(loginInfo.Context, a.memberRepo, a.middlewareUtil, a.thirdPartyUtil, a.observability)
 
 	loginInfo.TraceID = span.GetTraceID()
 	loginInfo.SpanID = span.GetSpanID()
+
 	response := domain.RespLogin{}
+	httpStatus := int(0)
 	switch loginInfo.TypeSystem {
 	case domain.SYSTEM:
-		return login.Login(loginInfo)
+		httpStatus, response = login.Login(loginInfo)
 	case domain.THIRD_PARTY:
-		return login.LoginThirdParty(loginInfo)
+		httpStatus, response = login.LoginThirdParty(loginInfo)
 	default:
 		response.Resp = domain.ErrSystemNotSupport
-		return response.Resp.HttpStatus, response
+		httpStatus = response.Resp.HttpStatus
 	}
+
+	statusCouter := domain.MetricsCounter{
+		Name: fmt.Sprintf("http_status_%s", response.Resp.Status),
+		Help: fmt.Sprintf("HTTP status for %s", response.Resp.Status),
+	}
+	a.observability.Metrics().Counter(statusCouter).Inc()
+
+	return httpStatus, response
 }
 
 func (a *AuthenticationService) Register(registerInfo domain.RegisterInfo) (int, domain.RespRegister) {

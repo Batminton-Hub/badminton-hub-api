@@ -43,7 +43,6 @@ type Log interface {
 
 // Trace
 type Trace interface {
-	// CreateSpan(ctx context.Context, scopeName, name string) Span
 	SetScope(scopeName string) Span
 	NewContext(traceID string, spanID string) (context.Context, error)
 	Tag() Tag

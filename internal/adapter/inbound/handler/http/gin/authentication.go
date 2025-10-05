@@ -23,7 +23,10 @@ func (a *AuthenticationSystem) Login(c *gin.Context) {
 
 	platform := getPlatform(c)
 	loginInfo := domain.LoginInfo{
-		ScopeName:    "login",
+		Context:      c,
+		Path:         getPath(c),
+		Job:          domain.LOGIN,
+		ScopeName:    domain.LOGIN,
 		Platform:     platform,
 		PlatformData: getPlatformData(c),
 		TypeSystem:   getTypeSystem(platform),
