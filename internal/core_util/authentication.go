@@ -29,12 +29,13 @@ func RandomGoogleState() (string, error) {
 }
 
 func Authenticate(authInfo domain.AuthInfo, memberUtil port.MiddlewareUtil) (int, domain.RespAuth) {
+	authBody := domain.AuthBody{}
 	response := domain.RespAuth{}
 	config := util.LoadConfig()
 
 	// ถอด authentication token ที่ส่งมาจาก client
-	authBody, err := memberUtil.ValidateBearerToken(authInfo.BearerToken)
-	if err != nil {
+	authBody, errInfo := memberUtil.ValidateBearerToken(authInfo.BearerToken)
+	if errInfo.Err != nil {
 		response.Resp = domain.ErrValidateToken
 		return http.StatusUnauthorized, response
 	}
@@ -48,6 +49,7 @@ func Authenticate(authInfo domain.AuthInfo, memberUtil port.MiddlewareUtil) (int
 	}
 	byteHash, err := util.EncryptGOB(hashAuthBody)
 	if err != nil {
+		response.Resp = domain.ErrAuthenticateFail
 		return http.StatusUnauthorized, response
 	}
 	rawHash := string(byteHash)
@@ -68,10 +70,11 @@ func Authenticate(authInfo domain.AuthInfo, memberUtil port.MiddlewareUtil) (int
 }
 
 type LoginSystem struct {
-	Ctx            context.Context
-	MemberRepo     port.MemberRepo
-	MiddlewareUtil port.MiddlewareUtil
-	ThirdPartyUtil port.ThirdPartyUtil
+	ctx            context.Context
+	memberRepo     port.MemberRepo
+	middlewareUtil port.MiddlewareUtil
+	thirdPartyUtil port.ThirdPartyUtil
+	observability  port.Observability
 }
 
 func NewLoginSystem(
@@ -79,53 +82,118 @@ func NewLoginSystem(
 	memberRepo port.MemberRepo,
 	middlewareUtil port.MiddlewareUtil,
 	thirdPartyUtil port.ThirdPartyUtil,
+	observability port.Observability,
 ) *LoginSystem {
 	return &LoginSystem{
-		Ctx:            ctx,
-		MemberRepo:     memberRepo,
-		MiddlewareUtil: middlewareUtil,
-		ThirdPartyUtil: thirdPartyUtil,
+		ctx:            ctx,
+		memberRepo:     memberRepo,
+		middlewareUtil: middlewareUtil,
+		thirdPartyUtil: thirdPartyUtil,
+		observability:  observability,
 	}
 }
 
 func (l *LoginSystem) Login(loginInfo domain.LoginInfo) (int, domain.RespLogin) {
 	response := domain.RespLogin{}
 
+	_, log, trace := Observe(l.observability)
+	startTrace := trace.SetScope(loginInfo.ScopeName)
+	traceCtx, err := trace.NewContext(loginInfo.TraceID, loginInfo.SpanID)
+	if err != nil {
+		response.Resp = domain.ErrInternalServer
+		return response.Resp.HttpStatus, response
+	}
+	span := startTrace.CreateSpan(traceCtx, "login-nomal")
+	defer span.End()
+
 	config := util.LoadConfig()
 	loginForm := loginInfo.LoginForm
 
-	memberBody, err := l.MemberRepo.FindEmailMember(l.Ctx, loginForm.Email)
-	if err != nil {
-		response.Resp = domain.ErrMemberEmailNotFound
+	spanFindEmail := span.AddSpan("find-email-member")
+	memberBody, errInfo := l.memberRepo.FindEmailMember(l.ctx, loginForm.Email)
+	if errInfo.Err != nil {
+		response.Resp = errInfo.Resp
+		spanFindEmail.SetStatus(trace.Code().Error(), errInfo.Err.Error())
+		spanFindEmail.End()
+
+		file, line := GetLine()
+		log.Error(l.ctx, domain.LogError{
+			TraceID: loginInfo.TraceID,
+			Path:    loginInfo.Path,
+			Job:     loginInfo.Job,
+			File:    file,
+			Line:    line,
+			Error:   errInfo.Err.Error(),
+		})
 		return http.StatusBadRequest, response
 	}
+	spanFindEmail.End()
 
 	// Check password
+	spanPassword := span.AddSpan("check-password")
 	if memberBody.Password != HashPassword(loginForm.Password, config.KeyHashPassword) {
 		response.Resp = domain.ErrLoginHashPassword
+		spanPassword.SetStatus(trace.Code().Error(), response.Resp.Msg)
+		spanPassword.SetTag(trace.Tag().String("hash_member_password", memberBody.Password))
+		spanPassword.SetTag(trace.Tag().String("hash_login_password", HashPassword(loginForm.Password, config.KeyHashPassword)))
+		spanPassword.End()
+
+		file, line := GetLine()
+		log.Error(l.ctx, domain.LogError{
+			TraceID: loginInfo.TraceID,
+			Path:    loginInfo.Path,
+			Job:     loginInfo.Job,
+			File:    file,
+			Line:    line,
+			Error:   response.Resp.Err.Error(),
+		})
+
 		return http.StatusUnauthorized, response
 	}
+	spanPassword.End()
 
 	// create token
+	spanToken := span.AddSpan("create-token")
 	hashAuth := domain.HashAuth{
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-
-	tokenObj, err := l.MiddlewareUtil.GenBearerToken(hashAuth)
-	if err != nil {
+	tokenObj, errInfo := l.middlewareUtil.GenBearerToken(hashAuth)
+	if errInfo.Err != nil {
 		response.Resp = domain.ErrGenerateToken
+		spanToken.SetStatus(trace.Code().Error(), errInfo.Err.Error())
+		spanToken.End()
+
+		file, line := GetLine()
+		log.Error(l.ctx, domain.LogError{
+			TraceID: loginInfo.TraceID,
+			Path:    loginInfo.Path,
+			Job:     loginInfo.Job,
+			File:    file,
+			Line:    line,
+			Error:   response.Resp.Err.Error(),
+		})
 		return http.StatusInternalServerError, response
 	}
+	spanToken.End()
 
 	response.BearerToken = tokenObj.Token
 	response.Resp = domain.LoginSuccess
+
+	logLogin := domain.LogInfo{
+		TraceID: loginInfo.TraceID,
+		Path:    loginInfo.Path,
+		Job:     loginInfo.Job,
+		Message: response.Resp.Msg,
+	}
+	l.observability.Log().Info(l.ctx, logLogin)
+
 	return domain.LoginSuccess.HttpStatus, response
 }
 
 func (l *LoginSystem) LoginThirdParty(loginInfo domain.LoginInfo) (int, domain.RespLogin) {
 	response := domain.RespLogin{}
-	info, resp := l.ThirdPartyUtil.BindingRequest(loginInfo.Platform, loginInfo.PlatformData)
+	info, resp := l.thirdPartyUtil.BindingRequest(loginInfo.Platform, loginInfo.PlatformData)
 	if resp.Status == domain.ERROR {
 		response.Resp = resp
 		return resp.HttpStatus, response
@@ -134,10 +202,10 @@ func (l *LoginSystem) LoginThirdParty(loginInfo domain.LoginInfo) (int, domain.R
 	loginForm := domain.LoginForm{
 		Email: info.Email,
 	}
-	memberBody, err := l.MemberRepo.FindEmailMember(l.Ctx, loginForm.Email)
-	if err != nil {
-		response.Resp = domain.ErrMemberEmailNotFound
-		return http.StatusBadRequest, response
+	memberBody, errInfo := l.memberRepo.FindEmailMember(l.ctx, loginForm.Email)
+	if errInfo.Err != nil {
+		response.Resp = errInfo.Resp
+		return errInfo.Resp.HttpStatus, response
 	}
 
 	// create token
@@ -145,8 +213,8 @@ func (l *LoginSystem) LoginThirdParty(loginInfo domain.LoginInfo) (int, domain.R
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	tokenObj, err := l.MiddlewareUtil.GenBearerToken(hashAuth)
-	if err != nil {
+	tokenObj, errInfo := l.middlewareUtil.GenBearerToken(hashAuth)
+	if errInfo.Err != nil {
 		response.Resp = domain.ErrGenerateToken
 		return http.StatusInternalServerError, response
 	}
@@ -196,16 +264,9 @@ func (r *RegisterSystem) Register(registerInfo domain.RegisterInfo) (int, domain
 		UpdatedAt:  updateAt,
 	}
 
-	if err := r.MemberRepo.SaveMember(r.Ctx, memberBody); err != nil {
-		switch err {
-		case domain.ErrMemberRegisterFailDuplicateEmail.Err:
-			response.Resp = domain.ErrMemberRegisterFailDuplicateEmail
-		case domain.ErrMemberRegisterFailDuplicateHash.Err:
-			response.Resp = domain.ErrMemberRegisterFailDuplicateHash
-		default:
-			response.Resp = domain.ErrCreateMemberFail
-		}
-		return http.StatusInternalServerError, response
+	if errResult := r.MemberRepo.SaveMember(r.Ctx, memberBody); errResult.Err != nil {
+		response.Resp = errResult.Resp
+		return errResult.Resp.HttpStatus, response
 	}
 
 	// create token
@@ -213,8 +274,8 @@ func (r *RegisterSystem) Register(registerInfo domain.RegisterInfo) (int, domain
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	tokenObj, err := r.MiddlewareUtil.GenBearerToken(hashAuth)
-	if err != nil {
+	tokenObj, errInfo := r.MiddlewareUtil.GenBearerToken(hashAuth)
+	if errInfo.Err != nil {
 		response.Resp = domain.ErrGenerateToken
 		return http.StatusInternalServerError, response
 	}
@@ -249,16 +310,10 @@ func (r *RegisterSystem) RegisterThirdParty(registerInfo domain.RegisterInfo) (i
 		CreatedAt:    createAt,
 		UpdatedAt:    updateAt,
 	}
-	if err := r.MemberRepo.SaveMember(r.Ctx, memberBody); err != nil {
-		switch err {
-		case domain.ErrMemberRegisterFailDuplicateEmail.Err:
-			response.Resp = domain.ErrMemberRegisterFailDuplicateEmail
-		case domain.ErrMemberRegisterFailDuplicateHash.Err:
-			response.Resp = domain.ErrMemberRegisterFailDuplicateHash
-		default:
-			response.Resp = domain.ErrCreateMemberFail
-		}
-		return http.StatusInternalServerError, response
+
+	if errResult := r.MemberRepo.SaveMember(r.Ctx, memberBody); errResult.Err != nil {
+		response.Resp = errResult.Resp
+		return errResult.Resp.HttpStatus, response
 	}
 
 	// create token
@@ -266,8 +321,8 @@ func (r *RegisterSystem) RegisterThirdParty(registerInfo domain.RegisterInfo) (i
 		CreateAt: memberBody.CreatedAt,
 		UserID:   memberBody.UserID,
 	}
-	tokenObj, err := r.MiddlewareUtil.GenBearerToken(hashAuth)
-	if err != nil {
+	tokenObj, errInfo := r.MiddlewareUtil.GenBearerToken(hashAuth)
+	if errInfo.Err != nil {
 		return http.StatusInternalServerError, response
 	}
 
@@ -289,7 +344,8 @@ func NewMiddlewareUtil(
 }
 
 // middleware util
-func (m *MiddlewareUtil) ValidateBearerToken(tokenObj domain.BearerToken) (domain.AuthBody, error) {
+func (m *MiddlewareUtil) ValidateBearerToken(tokenObj domain.BearerToken) (domain.AuthBody, domain.ErrInfo) {
+	errInfo := domain.ErrInfo{}
 	config := util.LoadConfig()
 
 	token := tokenObj.Token[len("Bearer "):] // Remove "Bearer " prefix
@@ -297,18 +353,23 @@ func (m *MiddlewareUtil) ValidateBearerToken(tokenObj domain.BearerToken) (domai
 	authBody := domain.AuthBody{}
 	err := m.encryption.Decrypte(token, config.KeyBearerToken, &authBody)
 	if err != nil {
-		return authBody, err
+		errInfo.Err = err
+		errInfo.Resp = domain.ErrValidateToken
+		return authBody, errInfo
 	}
 
 	if authBody.Exp < time.Now().Unix() {
-		return authBody, fmt.Errorf("token has expired")
+		errInfo.Err = fmt.Errorf("token has expired")
+		errInfo.Resp = domain.ErrValidateToken
+		return authBody, errInfo
 	}
 
-	return authBody, nil
+	return authBody, errInfo
 }
 
-func (m *MiddlewareUtil) GenBearerToken(hashBody domain.HashAuth) (domain.BearerToken, error) {
+func (m *MiddlewareUtil) GenBearerToken(hashBody domain.HashAuth) (domain.BearerToken, domain.ErrInfo) {
 	response := domain.BearerToken{}
+	errInfo := domain.ErrInfo{}
 	var token string
 	config := util.LoadConfig()
 
@@ -318,7 +379,9 @@ func (m *MiddlewareUtil) GenBearerToken(hashBody domain.HashAuth) (domain.Bearer
 
 	byteHash, err := util.EncryptGOB(hashBody)
 	if err != nil {
-		return response, fmt.Errorf("failed to encrypt hash body: %w", err)
+		errInfo.Err = fmt.Errorf("failed to encrypt hash body: %w", err)
+		errInfo.Resp = domain.ErrGenerateToken
+		return response, errInfo
 	}
 	rawHash := string(byteHash)
 	authBody := domain.AuthBody{
@@ -333,10 +396,12 @@ func (m *MiddlewareUtil) GenBearerToken(hashBody domain.HashAuth) (domain.Bearer
 
 	encryptedMember, err := m.encryption.Encrypte(authBody, config.KeyBearerToken, lt)
 	if err != nil {
-		return response, fmt.Errorf("failed to encrypt member: %w", err)
+		errInfo.Err = fmt.Errorf("failed to encrypt member: %w", err)
+		errInfo.Resp = domain.ErrGenerateToken
+		return response, errInfo
 	}
 
 	token = encryptedMember
 	response.Token = token
-	return response, nil
+	return response, errInfo
 }

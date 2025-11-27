@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type AuthMember struct {
 	UserID    string    `json:"user_id"`
@@ -25,6 +28,12 @@ type BearerToken struct {
 }
 
 type LoginInfo struct {
+	Context      context.Context
+	TraceID      string
+	SpanID       string
+	ScopeName    string
+	Path         string
+	Job          string
 	Platform     string
 	PlatformData any
 	LoginForm    LoginForm

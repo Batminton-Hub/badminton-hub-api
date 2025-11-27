@@ -20,15 +20,13 @@ type AuthenticationSystem struct {
 }
 
 func (a *AuthenticationSystem) Login(c *gin.Context) {
-	counter := domain.MetricsCounter{
-		Name: "login_request",
-		Help: "Number of login requests",
-	}
-	countLogin := a.observability.Metrics().Counter(counter)
-	countLogin.Inc()
 
 	platform := getPlatform(c)
 	loginInfo := domain.LoginInfo{
+		Context:      c,
+		Path:         getPath(c),
+		Job:          domain.LOGIN,
+		ScopeName:    domain.LOGIN,
 		Platform:     platform,
 		PlatformData: getPlatformData(c),
 		TypeSystem:   getTypeSystem(platform),
@@ -42,23 +40,6 @@ func (a *AuthenticationSystem) Login(c *gin.Context) {
 
 	loginInfo.LoginForm = loginForm
 	code, response := a.authenticationSystem.Login(loginInfo)
-
-	switch response.Resp.Status {
-	case domain.SUCCESS:
-		counter = domain.MetricsCounter{
-			Name: "login_request_success",
-			Help: "Number of login requests success",
-		}
-		countLogin = a.observability.Metrics().Counter(counter)
-		countLogin.Inc()
-	case domain.ERROR:
-		counter = domain.MetricsCounter{
-			Name: "login_request_error",
-			Help: "Number of login requests error",
-		}
-		countLogin = a.observability.Metrics().Counter(counter)
-		countLogin.Inc()
-	}
 
 	RespAuth(c, code, response.Resp.Code, response.Resp.Msg, response.BearerToken)
 }

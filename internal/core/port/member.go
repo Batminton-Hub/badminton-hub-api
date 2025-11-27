@@ -15,8 +15,8 @@ type ProfileUtil interface {
 }
 
 type MemberRepo interface {
-	SaveMember(ctx context.Context, member domain.Member) error
-	FindEmailMember(ctx context.Context, email string) (domain.Member, error)
-	GetMemberByUserID(ctx context.Context, userID string) (domain.Member, error)
-	UpdateMember(ctx context.Context, userID string, request domain.ReqUpdateProfile) error
+	SaveMember(ctx context.Context, member domain.Member) domain.ErrInfo
+	FindEmailMember(ctx context.Context, email string) (domain.Member, domain.ErrInfo)
+	GetMemberByUserID(ctx context.Context, userID string) (domain.Member, domain.ErrInfo)
+	UpdateMember(ctx context.Context, userID string, request domain.ReqUpdateProfile) domain.ErrInfo
 }

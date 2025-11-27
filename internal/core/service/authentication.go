@@ -5,6 +5,7 @@ import (
 	"Badminton-Hub/internal/core/port"
 	"Badminton-Hub/internal/core_util"
 	"Badminton-Hub/util"
+	"fmt"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type AuthenticationService struct {
 	memberRepo     port.MemberRepo
 	encryption     port.EncryptionUtil
 	middlewareUtil port.MiddlewareUtil
+	observability  port.Observability
 }
 
 type AuthenticateService struct {
@@ -45,11 +47,13 @@ func NewAuthenticationService(
 	memberRepo port.MemberRepo,
 	middlewareUtil port.MiddlewareUtil,
 	thirdPartyUtil port.ThirdPartyUtil,
+	observability port.Observability,
 ) *AuthenticationService {
 	return &AuthenticationService{
 		memberRepo:     memberRepo,
 		middlewareUtil: middlewareUtil,
 		thirdPartyUtil: thirdPartyUtil,
+		observability:  observability,
 	}
 }
 
@@ -77,21 +81,39 @@ func NewMiddlewareSystem(
 
 // authentication service
 func (a *AuthenticationService) Login(loginInfo domain.LoginInfo) (int, domain.RespLogin) {
-	ctx, cancel := util.InitConText(2 * time.Second)
-	defer cancel()
+	trace := a.observability.Trace()
+	startTrace := trace.SetScope(loginInfo.ScopeName)
+	tag := trace.Tag()
+	span := startTrace.CreateSpan(loginInfo.Context, "login")
+	span.SetTag(tag.String("platform", loginInfo.Platform))
+	span.SetTag(tag.String("email", loginInfo.LoginForm.Email))
+	span.SetTag(tag.Bool("is_third_party", loginInfo.TypeSystem == domain.THIRD_PARTY))
+	defer span.End()
 
-	login := core_util.NewLoginSystem(ctx, a.memberRepo, a.middlewareUtil, a.thirdPartyUtil)
+	login := core_util.NewLoginSystem(loginInfo.Context, a.memberRepo, a.middlewareUtil, a.thirdPartyUtil, a.observability)
+
+	loginInfo.TraceID = span.GetTraceID()
+	loginInfo.SpanID = span.GetSpanID()
 
 	response := domain.RespLogin{}
+	httpStatus := int(0)
 	switch loginInfo.TypeSystem {
 	case domain.SYSTEM:
-		return login.Login(loginInfo)
+		httpStatus, response = login.Login(loginInfo)
 	case domain.THIRD_PARTY:
-		return login.LoginThirdParty(loginInfo)
+		httpStatus, response = login.LoginThirdParty(loginInfo)
 	default:
 		response.Resp = domain.ErrSystemNotSupport
-		return response.Resp.HttpStatus, response
+		httpStatus = response.Resp.HttpStatus
 	}
+
+	statusCouter := domain.MetricsCounter{
+		Name: fmt.Sprintf("http_status_%s", response.Resp.Status),
+		Help: fmt.Sprintf("HTTP status for %s", response.Resp.Status),
+	}
+	a.observability.Metrics().Counter(statusCouter).Inc()
+
+	return httpStatus, response
 }
 
 func (a *AuthenticationService) Register(registerInfo domain.RegisterInfo) (int, domain.RespRegister) {
