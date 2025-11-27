@@ -3,6 +3,7 @@ package mongoDB
 import (
 	"Badminton-Hub/internal/core/domain"
 	"context"
+	"errors"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -14,44 +15,48 @@ const (
 	MemberCollection = "member"
 )
 
-func (db *MongoDB) SaveMember(ctx context.Context, member domain.Member) error {
+func (db *MongoDB) SaveMember(ctx context.Context, member domain.Member) domain.ErrInfo {
+	result := &mongo.InsertOneResult{}
+	errResult := domain.ErrInfo{}
 	collection := db.Database.Collection(MemberCollection)
-	result, err := collection.InsertOne(ctx, member)
-	if err != nil {
-		if strings.Contains(err.Error(), "index: email_1 dup key") {
-			return domain.ErrMemberRegisterFailDuplicateEmail.Err
-		} else if strings.Contains(err.Error(), "index: hash_1 dup key") {
-			return domain.ErrMemberRegisterFailDuplicateHash.Err
+	result, errResult.Err = collection.InsertOne(ctx, member)
+	if errResult.Err != nil {
+		if strings.Contains(errResult.Err.Error(), "index: email_1 dup key") {
+			errResult.Resp = domain.ErrMemberRegisterFailDuplicateEmail
+		} else if strings.Contains(errResult.Err.Error(), "index: hash_1 dup key") {
+			errResult.Resp = domain.ErrMemberRegisterFailDuplicateHash
 		} else {
-			return err
+			errResult.Resp = domain.ErrCreateMemberFail
 		}
 	}
 
-	if result.InsertedID == nil {
-		return domain.ErrCreateMemberFail.Err
+	if result != nil && result.InsertedID == nil {
+		errResult.Resp = domain.ErrCreateMemberFail
 	}
 
-	return nil
+	return errResult
 }
 
-func (db *MongoDB) FindEmailMember(ctx context.Context, email string) (domain.Member, error) {
+func (db *MongoDB) FindEmailMember(ctx context.Context, email string) (domain.Member, domain.ErrInfo) {
+	errInfo := domain.ErrInfo{}
 	collection := db.Database.Collection(MemberCollection)
 	member := domain.Member{}
 	filter := bson.M{
 		"email": email,
 	}
-	err := collection.FindOne(ctx, filter).Decode(&member)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return member, domain.ErrMemberEmailNotFound.Err
+	errInfo.Err = collection.FindOne(ctx, filter).Decode(&member)
+	if errInfo.Err != nil {
+		if errInfo.Err == mongo.ErrNoDocuments {
+			errInfo.Resp = domain.ErrMemberEmailNotFound
 		}
-		return member, err
+		errInfo.Resp = domain.ErrMemberEmailNotFound
 	}
 
-	return member, nil
+	return member, errInfo
 }
 
-func (db *MongoDB) GetMemberByUserID(ctx context.Context, userID string) (domain.Member, error) {
+func (db *MongoDB) GetMemberByUserID(ctx context.Context, userID string) (domain.Member, domain.ErrInfo) {
+	errInfo := domain.ErrInfo{}
 	collection := db.Database.Collection(MemberCollection)
 	option := options.FindOne()
 	project := bson.M{
@@ -66,14 +71,16 @@ func (db *MongoDB) GetMemberByUserID(ctx context.Context, userID string) (domain
 	filter := bson.M{
 		"user_id": userID,
 	}
-	err := collection.FindOne(ctx, filter, option).Decode(&member)
-	if err != nil {
-		return member, err
+	errInfo.Err = collection.FindOne(ctx, filter, option).Decode(&member)
+	if errInfo.Err != nil {
+		errInfo.Resp = domain.ErrGetMember
 	}
-	return member, nil
+	return member, errInfo
 }
 
-func (db *MongoDB) UpdateMember(ctx context.Context, userID string, request domain.ReqUpdateProfile) error {
+func (db *MongoDB) UpdateMember(ctx context.Context, userID string, request domain.ReqUpdateProfile) domain.ErrInfo {
+	result := &mongo.UpdateResult{}
+	errInfo := domain.ErrInfo{}
 	collection := db.Database.Collection(MemberCollection)
 
 	filter := bson.M{
@@ -87,12 +94,15 @@ func (db *MongoDB) UpdateMember(ctx context.Context, userID string, request doma
 	update := bson.M{
 		"$set": request,
 	}
-	result, err := collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return err
+	result, errInfo.Err = collection.UpdateOne(ctx, filter, update)
+	if errInfo.Err != nil {
+		errInfo.Resp = domain.ErrUpdateMemberFail
+		return errInfo
 	}
 	if result.MatchedCount == 0 {
-		return domain.ErrUpdateMemberFail.Err
+		errInfo.Resp = domain.ErrUpdateMemberFail
+		errInfo.Err = errors.New("matched count is 0")
+		return errInfo
 	}
-	return nil
+	return errInfo
 }

@@ -26,8 +26,8 @@ func (m *MemberService) GetProfile(userInfo domain.ReqGetProfile) (int, domain.R
 	defer cancel()
 
 	response := domain.RespGetProfile{}
-	member, err := m.memberRepo.GetMemberByUserID(ctx, userInfo.UserID)
-	if err != nil {
+	member, errInfo := m.memberRepo.GetMemberByUserID(ctx, userInfo.UserID)
+	if errInfo.Err != nil {
 		response.Resp = domain.ErrGetMember
 		return response.Resp.HttpStatus, response
 	}
@@ -54,7 +54,7 @@ func (m *MemberService) UpdateProfile(userInfo domain.ReqGetProfile, request dom
 	}
 
 	userID := userInfo.UserID
-	if err := m.memberRepo.UpdateMember(ctx, userID, request); err != nil {
+	if errInfo := m.memberRepo.UpdateMember(ctx, userID, request); errInfo.Err != nil {
 		response.Resp = domain.ErrUpdateMemberFail
 		return response.Resp.HttpStatus, response
 	}

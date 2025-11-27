@@ -1,6 +1,9 @@
 package core_util
 
-import "Badminton-Hub/internal/core/port"
+import (
+	"Badminton-Hub/internal/core/port"
+	"runtime"
+)
 
 type Observability struct {
 	metrics port.Metrics
@@ -30,4 +33,13 @@ func (o *Observability) Log() port.Log {
 
 func (o *Observability) Trace() port.Trace {
 	return o.trace
+}
+
+func Observe(observe port.Observability) (port.Metrics, port.Log, port.Trace) {
+	return observe.Metrics(), observe.Log(), observe.Trace()
+}
+
+func GetLine() (string, int) {
+	_, file, line, _ := runtime.Caller(1)
+	return file, line
 }

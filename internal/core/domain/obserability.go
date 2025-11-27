@@ -22,17 +22,19 @@ type MetricsGauge struct {
 
 // Log
 type LogInfo struct {
+	TraceID string `json:"trace_id,omitempty"`
 	Path    string `json:"path,omitempty"`
 	Job     string `json:"job,omitempty"`
 	Message string `json:"msg,omitempty"`
 }
 
 type LogError struct {
-	Path  string `json:"path,omitempty"`
-	Job   string `json:"job,omitempty"`
-	Error string `json:"error,omitempty"`
-	File  string `json:"file,omitempty"`
-	Line  int    `json:"line,omitempty"`
+	TraceID string `json:"trace_id,omitempty"`
+	Path    string `json:"path,omitempty"`
+	Job     string `json:"job,omitempty"`
+	Error   string `json:"error,omitempty"`
+	File    string `json:"file,omitempty"`
+	Line    int    `json:"line,omitempty"`
 }
 
 // Trace
