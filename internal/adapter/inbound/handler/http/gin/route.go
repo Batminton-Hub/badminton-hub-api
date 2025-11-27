@@ -55,3 +55,19 @@ func (m *MainRoute) RouteHealthCheck() {
 	healthCheck := engine.Group("/")
 	healthCheck.GET("/health-check", m.healthCheck.HealthCheck)
 }
+
+func (m *MainRoute) RouteGang() {
+	gang := engine.Group("/gang")
+	gang.Use(m.authentication.MiddleWare)
+	// gang.GET("/:gang_id")                   // ดึงข้อมูลก๊วน
+	gang.POST("/create", m.gang.CreateGang) // สร้างก๊วน
+	// gang.GET("/search/:search_value")       // ค้นหาก๊วน
+	// gang.POST("/join-request/:gang_id")     // ส่งคำขอเข้าร่วมก๊วน
+	// gang.GET("/join-status/:gang_id")       // ดึงสถานะการเข้าร่วมก๊วน *polling
+	// gang.PATCH("/update/:gang_id")          // อัพเดทก๊วน
+	// gang.PUT("/allow-permisison")           // ให้สิทธิ์การแก้ไขก๊วน
+
+	// gang.PATCH("/leave/:gang_id")     // ออกจากก๊วน
+	// gang.PATCH("/dismiss-permission") // ยกเลิกสิทธิ์การแก้ไขก๊วน
+
+}

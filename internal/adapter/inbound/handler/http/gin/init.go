@@ -10,6 +10,7 @@ type MainRoute struct {
 	redirect       RedirectController
 	member         MemberController
 	observability  ObservabilityController
+	gang           GangController
 }
 
 func NewGinRoute(
@@ -17,6 +18,7 @@ func NewGinRoute(
 	redirect port.RedirectService,
 	member port.MemberService,
 	observability port.Observability,
+	gangService port.GangService,
 ) *MainRoute {
 	response := &MainRoute{
 		healthCheck:    &HealthCheck{observability},
@@ -24,6 +26,7 @@ func NewGinRoute(
 		redirect:       &Redirect{redirect},
 		member:         &Member{member},
 		observability:  &Observability{observability},
+		gang:           &Gang{observability, gangService},
 	}
 	return response
 }

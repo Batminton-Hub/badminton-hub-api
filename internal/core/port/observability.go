@@ -9,6 +9,7 @@ type Observability interface {
 	Metrics() Metrics
 	Log() Log
 	Trace() Trace
+	GetLine() (string, int)
 }
 
 // Metrics

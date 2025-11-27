@@ -50,6 +50,7 @@ func StartServer() {
 	authentication := service.NewAuthenticationService(db, middlewareUtil, thirdPartyUtil, observabilityUtil)
 	middlewareSystem := service.NewMiddlewareSystem(authenticateUtil, middlewareUtil)
 	authenticationSystem := service.NewAuthenticationSystem(authentication, middlewareSystem)
+	gangService := service.NewGangService(db, observabilityUtil)
 	redirect := service.NewRedirect(redirect3rdParty)
 	member := service.NewMemberService(db)
 
@@ -59,6 +60,7 @@ func StartServer() {
 		redirect,
 		member,
 		observabilityUtil,
+		gangService,
 	)
 
 	// Initialize HTTP server
@@ -71,4 +73,5 @@ func StartServer() {
 	route.RouteCallback()
 	route.RouteMember()
 	route.RouteObservability()
+	route.RouteGang()
 }

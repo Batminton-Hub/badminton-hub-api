@@ -88,4 +88,7 @@ var (
 
 	// Third Party
 	ErrInvalidDecode3rdPartyForm = errorNew(6000, "Invalid decode 3rd party form", http.StatusBadRequest)
+
+	// Gang
+	ErrCreateGangFail = errorNew(7000, "Failed to create gang", http.StatusBadRequest)
 )

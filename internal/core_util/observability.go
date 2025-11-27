@@ -35,6 +35,10 @@ func (o *Observability) Trace() port.Trace {
 	return o.trace
 }
 
+func (o *Observability) GetLine() (string, int) {
+	return GetLine()
+}
+
 func Observe(observe port.Observability) (port.Metrics, port.Log, port.Trace) {
 	return observe.Metrics(), observe.Log(), observe.Trace()
 }
